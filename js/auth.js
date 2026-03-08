@@ -2,29 +2,39 @@
 // AUTH.JS - Manejo de autenticación y sesión
 // ============================================================
 
-// Páginas que NO requieren autenticación
-const PUBLIC_PAGES = ['index.html', 'registro.html', '/'];
+// Páginas que REQUIEREN autenticación (el resto es público por defecto)
+const PROTECTED_PAGES = ['dashboard', 'nuevo-pqrs', 'lista-pqrs', 'detalle-pqrs', 'reportes'];
 
 // Inicializa auth en cada página
 document.addEventListener('DOMContentLoaded', () => {
   withSupabase(async (db) => {
     const path = window.location.pathname;
-    const isRegistroPage = path.endsWith('registro.html');
-    
-    // En la página de registro, cerrar cualquier sesión existente
+    // Extrae el nombre de página sin importar si tiene .html o no
+    // Ej: '/registro.html' → 'registro', '/dashboard' → 'dashboard', '/' → 'index'
+    const segment = (path.split('/').pop() || '').replace('.html', '') || 'index';
+
+    const isRegistroPage = segment === 'registro';
+    const isLoginPage    = segment === 'index' || path === '/' || path === '';
+    const isProtected    = PROTECTED_PAGES.includes(segment);
+
+    // En la página de registro: si hay sesión activa, redirigir al dashboard
     if (isRegistroPage) {
-      await db.auth.signOut();
+      const { data: { session: existingSession } } = await db.auth.getSession();
+      if (existingSession) {
+        window.location.href = 'dashboard.html';
+      }
       return;
     }
-    
-    const { data: { session } } = await db.auth.getSession();
-    const isPublic = PUBLIC_PAGES.some(p => path.endsWith(p)) || path === '/';
 
-    if (!session && !isPublic) {
+    const { data: { session } } = await db.auth.getSession();
+
+    // Página protegida sin sesión → ir al login
+    if (isProtected && !session) {
       window.location.href = 'index.html';
       return;
     }
-    if (session && isPublic) {
+    // Página de login con sesión activa → ir al dashboard
+    if (isLoginPage && session) {
       window.location.href = 'dashboard.html';
       return;
     }
@@ -106,7 +116,13 @@ async function handleLogin(e) {
   withSupabase(async (db) => {
     const { error } = await db.auth.signInWithPassword({ email, password });
     if (error) {
-      errorEl.textContent = 'Correo o contraseña incorrectos. Verifica tus credenciales.';
+      const esEmailNoConfirmado = error.message && (
+        error.message.toLowerCase().includes('email not confirmed') ||
+        error.message.toLowerCase().includes('invalid login') && error.status === 400
+      );
+      errorEl.textContent = esEmailNoConfirmado
+        ? 'Debes confirmar tu correo antes de iniciar sesión. Revisa tu bandeja de entrada (o spam).'
+        : 'Correo o contraseña incorrectos. Verifica tus credenciales.';
       errorEl.style.display = 'block';
       setLoading(btn, false);
       return;
@@ -197,12 +213,22 @@ async function handleRegistro(e) {
     }
 
     // Éxito
-    successEl.textContent = '¡Cuenta creada exitosamente! Redirigiendo...';
-    successEl.style.display = 'block';
-    
-    setTimeout(() => {
-      window.location.href = 'dashboard.html';
-    }, 2000);
+    if (authData.session) {
+      // Sin confirmación de email: sesión activa, ir al dashboard
+      successEl.textContent = '¡Cuenta creada exitosamente! Redirigiendo al panel...';
+      successEl.style.display = 'block';
+      setTimeout(() => {
+        window.location.href = 'dashboard.html';
+      }, 2000);
+    } else {
+      // Con confirmación de email: aún no hay sesión activa
+      successEl.textContent = '¡Cuenta creada! Revisa tu correo y confirma tu cuenta, luego inicia sesión.';
+      successEl.style.display = 'block';
+      setLoading(btn, false);
+      setTimeout(() => {
+        window.location.href = 'index.html';
+      }, 4000);
+    }
   });
 }
 

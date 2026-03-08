@@ -31,6 +31,16 @@
   to = "/reportes.html"
   status = 200
 
+[[redirects]]
+  from = "/registro"
+  to = "/registro.html"
+  status = 200
+
+[[redirects]]
+  from = "/index"
+  to = "/index.html"
+  status = 200
+
 # ---- HEADERS DE SEGURIDAD ----
 [[headers]]
   for = "/*"
