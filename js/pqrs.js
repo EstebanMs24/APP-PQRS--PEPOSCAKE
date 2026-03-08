@@ -135,22 +135,32 @@ async function handleSubmit(e) {
   withSupabase(async (db) => {
     const user = await getCurrentUser();
 
-    // Asegurar que el usuario existe en la tabla usuarios (por si fue creado directo desde el panel de Supabase)
+    // Resolver creado_por de forma segura: solo asignar el UUID si existe en la tabla usuarios
+    let creadoPor = null;
     if (user) {
+      // Verificar si ya existe
       const { data: usuarioExiste } = await db
         .from('usuarios')
         .select('id')
         .eq('id', user.id)
         .single();
 
-      if (!usuarioExiste) {
+      if (usuarioExiste) {
+        creadoPor = user.id;
+      } else {
+        // Intentar crearlo
         const emailUser = user.email || '';
-        await db.from('usuarios').insert({
+        const { error: insertErr } = await db.from('usuarios').insert({
           id: user.id,
           correo: emailUser,
           nombre: user.user_metadata?.nombre || emailUser.split('@')[0],
           rol: 'agente'
         });
+        // Solo usar el id si el insert fue exitoso
+        if (!insertErr) {
+          creadoPor = user.id;
+        }
+        // Si falló (RLS u otro motivo), creadoPor queda null y el PQRS igual se guarda
       }
     }
 
@@ -185,7 +195,7 @@ async function handleSubmit(e) {
       estado: 'Pendiente',
       tags: data.tags,
       imagenes: imageUrls,
-      creado_por: user ? user.id : null
+      creado_por: creadoPor
     };
 
     const { data: nuevo, error } = await db
