@@ -63,11 +63,18 @@ function mostrarBannerExito(mensaje) {
 }
 
 async function cargarTodos(db) {
-  const { data, error } = await db
+  let query = db
     .from('pqrs')
     .select('id, numero_caso, nombre_cliente, tipo_solicitud, area_responsable, estado, motivo, fecha_registro, tags, eliminado_en')
-    .eq('eliminado', viendoEliminados)
     .order('fecha_registro', { ascending: false });
+
+  if (viendoEliminados) {
+    query = query.eq('eliminado', true);
+  } else {
+    query = query.neq('eliminado', true); // incluye false Y null
+  }
+
+  const { data, error } = await query;
 
   if (error) {
     renderTabla([]);
@@ -161,7 +168,10 @@ function renderTabla(data) {
     const tagsBadges = (row.tags || []).map(t => `<span class="tag-badge">${escapeHtml(t)}</span>`).join('');
     const accion = viendoEliminados
       ? `<button class="btn btn-outline btn-sm" onclick="restaurarPQRS('${row.id}')">♻️ Restaurar</button>`
-      : `<a href="detalle-pqrs.html?id=${row.id}" class="btn btn-outline btn-sm">👁️ Ver</a>`;
+      : `<div style="display:flex;gap:0.35rem;">
+          <a href="detalle-pqrs.html?id=${row.id}" class="btn btn-outline btn-sm">👁️ Ver</a>
+          <button class="btn btn-outline-danger btn-sm" title="Eliminar" onclick="eliminarDesdeLista('${row.id}', '${escapeHtml(row.numero_caso)}')">🗑️</button>
+        </div>`;
     return `
     <tr ${viendoEliminados ? 'style="opacity:0.7"' : ''}>
       <td><strong style="color:var(--color-primary-dark)">${escapeHtml(row.numero_caso)}</strong>${tagsBadges ? '<br>' + tagsBadges : ''}</td>
@@ -209,6 +219,20 @@ function bindExport() {
       }
     });
   }
+}
+
+function eliminarDesdeLista(id, numeroCaso) {
+  const confirmar = confirm(`¿Eliminar ${numeroCaso}?\n\nEl caso se moverá a la papelera. Podrás restaurarlo desde "Ver Eliminados".`);
+  if (!confirmar) return;
+  withSupabase(async (db) => {
+    const { error } = await db
+      .from('pqrs')
+      .update({ eliminado: true, eliminado_en: new Date().toISOString() })
+      .eq('id', id);
+    if (error) { alert('Error al eliminar: ' + error.message); return; }
+    mostrarBannerExito(`✅ ${numeroCaso} eliminado y movido a la papelera.`);
+    await cargarTodos(db);
+  });
 }
 
 function restaurarPQRS(id) {

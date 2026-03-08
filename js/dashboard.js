@@ -11,9 +11,9 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 async function cargarEstadisticas(db) {
-  const { data, error } = await db.from('pqrs').select('estado, area_responsable, tipo_solicitud').eq('eliminado', false);
+  const { data, error } = await db.from('pqrs').select('estado, area_responsable, tipo_solicitud').neq('eliminado', true);
 
-  if (error || !data) return;
+  if (error || !data) { console.error('Error stats:', error); return; }
 
   const total = data.length;
   const pendiente = data.filter(d => d.estado === 'Pendiente').length;
@@ -26,11 +26,11 @@ async function cargarEstadisticas(db) {
   setText('statResuelto', resuelto);
 
   // Contar eliminados
-  const { count: countEliminados } = await db
+  const { count: countEliminados, error: errCount } = await db
     .from('pqrs')
     .select('id', { count: 'exact', head: true })
     .eq('eliminado', true);
-  setText('statEliminado', countEliminados ?? 0);
+  setText('statEliminado', errCount ? '?' : (countEliminados ?? 0));
 
   // Gráfico por área
   const porArea = groupBy(data, 'area_responsable');
@@ -58,7 +58,7 @@ async function cargarCasosRecientes(db) {
   const { data, error } = await db
     .from('pqrs')
     .select('id, numero_caso, nombre_cliente, tipo_solicitud, area_responsable, estado, fecha_registro')
-    .eq('eliminado', false)
+    .neq('eliminado', true)
     .order('fecha_registro', { ascending: false })
     .limit(10);
 
@@ -162,7 +162,7 @@ async function cargarTendencia(db) {
   const { data, error } = await db
     .from('pqrs')
     .select('fecha_registro')
-    .eq('eliminado', false)
+    .neq('eliminado', true)
     .gte('fecha_registro', primerMes + 'T00:00:00');
 
   if (error || !data) {
