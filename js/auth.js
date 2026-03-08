@@ -11,12 +11,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const { data: { session } } = await db.auth.getSession();
     const path = window.location.pathname;
     const isPublic = PUBLIC_PAGES.some(p => path.endsWith(p)) || path === '/';
+    const isRegistroPage = path.endsWith('registro.html');
 
     if (!session && !isPublic) {
       window.location.href = 'index.html';
       return;
     }
-    if (session && isPublic) {
+    // No redirigir desde la página de registro (debe manejar su propia redirección)
+    if (session && isPublic && !isRegistroPage) {
       window.location.href = 'dashboard.html';
       return;
     }
