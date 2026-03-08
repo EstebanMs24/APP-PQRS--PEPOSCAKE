@@ -8,17 +8,23 @@ const PUBLIC_PAGES = ['index.html', 'registro.html', '/'];
 // Inicializa auth en cada página
 document.addEventListener('DOMContentLoaded', () => {
   withSupabase(async (db) => {
-    const { data: { session } } = await db.auth.getSession();
     const path = window.location.pathname;
-    const isPublic = PUBLIC_PAGES.some(p => path.endsWith(p)) || path === '/';
     const isRegistroPage = path.endsWith('registro.html');
+    
+    // En la página de registro, cerrar cualquier sesión existente
+    if (isRegistroPage) {
+      await db.auth.signOut();
+      return;
+    }
+    
+    const { data: { session } } = await db.auth.getSession();
+    const isPublic = PUBLIC_PAGES.some(p => path.endsWith(p)) || path === '/';
 
     if (!session && !isPublic) {
       window.location.href = 'index.html';
       return;
     }
-    // No redirigir desde la página de registro (debe manejar su propia redirección)
-    if (session && isPublic && !isRegistroPage) {
+    if (session && isPublic) {
       window.location.href = 'dashboard.html';
       return;
     }
