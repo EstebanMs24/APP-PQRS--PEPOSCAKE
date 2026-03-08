@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Reportes - PQRS Pepo's Cake</title>
+  <link rel="stylesheet" href="css/styles.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet" />
+</head>
+<body>
+  <!-- SIDEBAR -->
+  <div class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <div class="sidebar-logo">
+        <span class="logo-emoji-sm">🎂</span>
+        <div>
+          <span class="sidebar-brand">Pepo's Cake</span>
+          <span class="sidebar-sub">PQRS</span>
+        </div>
+      </div>
+      <button class="sidebar-close" id="sidebarClose">✕</button>
+    </div>
+    <nav class="sidebar-nav">
+      <a href="dashboard.html" class="nav-item">
+        <span class="nav-icon">📊</span> Dashboard
+      </a>
+      <a href="nuevo-pqrs.html" class="nav-item">
+        <span class="nav-icon">➕</span> Nuevo PQRS
+      </a>
+      <a href="lista-pqrs.html" class="nav-item">
+        <span class="nav-icon">📋</span> Todos los PQRS
+      </a>
+      <a href="reportes.html" class="nav-item active">
+        <span class="nav-icon">📈</span> Reportes
+      </a>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="user-info" id="userInfo">
+        <span class="user-avatar">👤</span>
+        <div>
+          <span class="user-name" id="userName">Cargando...</span>
+          <span class="user-role" id="userRole"></span>
+        </div>
+      </div>
+      <button class="btn-logout" id="logoutBtn">🚪 Salir</button>
+    </div>
+  </div>
+  <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+  <!-- MAIN -->
+  <div class="main-content">
+    <header class="topbar">
+      <button class="menu-toggle" id="menuToggle">☰</button>
+      <h2 class="page-title">Reportes y Estadísticas</h2>
+      <div class="topbar-actions">
+        <button class="btn btn-success btn-sm" id="btnExportExcel">📊 Exportar Excel</button>
+      </div>
+    </header>
+
+    <main class="page-body">
+      <!-- FILTRO DE PERÍODO -->
+      <div class="card filters-card mb-4">
+        <div class="card-body">
+          <div class="filters-grid filters-grid-3">
+            <div class="form-group">
+              <label>Desde</label>
+              <input type="date" id="reporteDesde" />
+            </div>
+            <div class="form-group">
+              <label>Hasta</label>
+              <input type="date" id="reporteHasta" />
+            </div>
+            <div class="form-group filter-actions">
+              <button class="btn btn-primary" id="btnGenerarReporte">📊 Generar</button>
+              <button class="btn btn-outline" id="btnReporteTodo">Ver Todo</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- KPIs PRINCIPALES -->
+      <section class="stats-grid stats-grid-5">
+        <div class="stat-card stat-total">
+          <div class="stat-icon">📋</div>
+          <div class="stat-info">
+            <span class="stat-number" id="rTotal">--</span>
+            <span class="stat-label">Total PQRS</span>
+          </div>
+        </div>
+        <div class="stat-card stat-pendiente">
+          <div class="stat-icon">⏳</div>
+          <div class="stat-info">
+            <span class="stat-number" id="rPendiente">--</span>
+            <span class="stat-label">Pendientes</span>
+          </div>
+        </div>
+        <div class="stat-card stat-proceso">
+          <div class="stat-icon">🔄</div>
+          <div class="stat-info">
+            <span class="stat-number" id="rProceso">--</span>
+            <span class="stat-label">En Proceso</span>
+          </div>
+        </div>
+        <div class="stat-card stat-resuelto">
+          <div class="stat-icon">✅</div>
+          <div class="stat-info">
+            <span class="stat-number" id="rResuelto">--</span>
+            <span class="stat-label">Resueltos</span>
+          </div>
+        </div>
+        <div class="stat-card stat-tasa">
+          <div class="stat-icon">📈</div>
+          <div class="stat-info">
+            <span class="stat-number" id="rTasa">--</span>
+            <span class="stat-label">Tasa de Resolución</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- GRÁFICAS -->
+      <div class="charts-grid mt-4">
+        <div class="card">
+          <div class="card-header"><h3>Por Área</h3></div>
+          <div class="card-body">
+            <div id="chartReporteArea" class="bar-chart-container"></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header"><h3>Por Tipo</h3></div>
+          <div class="card-body">
+            <div id="chartReporteTipo" class="bar-chart-container"></div>
+          </div>
+        </div>
+        <div class="card chart-full">
+          <div class="card-header"><h3>PQRS por Mes</h3></div>
+          <div class="card-body">
+            <div id="chartReporteMes" class="bar-chart-container"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TABLA DE RESUMEN POR MES -->
+      <div class="card mt-4">
+        <div class="card-header">
+          <h3>Resumen Mensual</h3>
+        </div>
+        <div class="card-body p-0">
+          <div class="table-responsive">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>Mes</th>
+                  <th>Total</th>
+                  <th>Pendientes</th>
+                  <th>En Proceso</th>
+                  <th>Resueltos</th>
+                  <th>% Resolución</th>
+                </tr>
+              </thead>
+              <tbody id="tbodyMeses">
+                <tr><td colspan="6" class="text-center">Cargando...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script src="js/supabase-client.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/exports.js"></script>
+  <script src="js/reportes.js"></script>
+</body>
+</html>

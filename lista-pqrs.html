@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Lista de PQRS - Pepo's Cake</title>
+  <link rel="stylesheet" href="css/styles.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet" />
+</head>
+<body>
+  <!-- SIDEBAR -->
+  <div class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <div class="sidebar-logo">
+        <span class="logo-emoji-sm">🎂</span>
+        <div>
+          <span class="sidebar-brand">Pepo's Cake</span>
+          <span class="sidebar-sub">PQRS</span>
+        </div>
+      </div>
+      <button class="sidebar-close" id="sidebarClose">✕</button>
+    </div>
+    <nav class="sidebar-nav">
+      <a href="dashboard.html" class="nav-item">
+        <span class="nav-icon">📊</span> Dashboard
+      </a>
+      <a href="nuevo-pqrs.html" class="nav-item">
+        <span class="nav-icon">➕</span> Nuevo PQRS
+      </a>
+      <a href="lista-pqrs.html" class="nav-item active">
+        <span class="nav-icon">📋</span> Todos los PQRS
+      </a>
+      <a href="reportes.html" class="nav-item">
+        <span class="nav-icon">📈</span> Reportes
+      </a>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="user-info" id="userInfo">
+        <span class="user-avatar">👤</span>
+        <div>
+          <span class="user-name" id="userName">Cargando...</span>
+          <span class="user-role" id="userRole"></span>
+        </div>
+      </div>
+      <button class="btn-logout" id="logoutBtn">🚪 Salir</button>
+    </div>
+  </div>
+  <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+  <!-- MAIN -->
+  <div class="main-content">
+    <header class="topbar">
+      <button class="menu-toggle" id="menuToggle">☰</button>
+      <h2 class="page-title">Todos los PQRS</h2>
+      <div class="topbar-actions">
+        <button class="btn btn-success btn-sm" id="btnExportExcel">📊 Excel</button>
+        <a href="nuevo-pqrs.html" class="btn btn-primary btn-sm">➕ Nuevo</a>
+      </div>
+    </header>
+
+    <main class="page-body">
+      <!-- FILTROS -->
+      <div class="card filters-card">
+        <div class="card-body">
+          <div class="filters-grid">
+            <div class="form-group">
+              <label>Buscar</label>
+              <input type="text" id="filtroSearch" placeholder="Nombre cliente o Nº caso..." />
+            </div>
+            <div class="form-group">
+              <label>Estado</label>
+              <select id="filtroEstado">
+                <option value="">Todos</option>
+                <option value="Pendiente">Pendiente</option>
+                <option value="En_proceso">En Proceso</option>
+                <option value="Resuelto">Resuelto</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Área</label>
+              <select id="filtroArea">
+                <option value="">Todas</option>
+                <option value="Produccion">Producción</option>
+                <option value="Envios">Envíos</option>
+                <option value="Entrega">Entrega</option>
+                <option value="Atencion_cliente">Atención al Cliente</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Tipo</label>
+              <select id="filtroTipo">
+                <option value="">Todos</option>
+                <option value="Peticion">Petición</option>
+                <option value="Queja">Queja</option>
+                <option value="Reclamo">Reclamo</option>
+                <option value="Sugerencia">Sugerencia</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Desde</label>
+              <input type="date" id="filtroDesde" />
+            </div>
+            <div class="form-group">
+              <label>Hasta</label>
+              <input type="date" id="filtroHasta" />
+            </div>
+            <div class="form-group">
+              <label>Etiqueta</label>
+              <input type="text" id="filtroTag" placeholder="Buscar por etiqueta..." />
+            </div>
+            <div class="form-group filter-actions">
+              <button class="btn btn-primary" id="btnFiltrar">🔍 Filtrar</button>
+              <button class="btn btn-outline" id="btnLimpiar">✕ Limpiar</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TABLA -->
+      <div class="card mt-3">
+        <div class="card-header">
+          <span id="countLabel" class="count-label">Mostrando todos los casos</span>
+        </div>
+        <div class="card-body p-0">
+          <div class="table-responsive">
+            <table class="table table-hover">
+              <thead>
+                <tr>
+                  <th>Nº Caso</th>
+                  <th>Fecha</th>
+                  <th>Cliente</th>
+                  <th>Tipo</th>
+                  <th>Área</th>
+                  <th>Motivo</th>
+                  <th>SLA</th>
+                  <th>Estado</th>
+                  <th>Acciones</th>
+                </tr>
+              </thead>
+              <tbody id="tbodyLista">
+                <tr><td colspan="9" class="text-center">Cargando...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <!-- PAGINACIÓN -->
+        <div class="card-footer">
+          <div class="pagination" id="pagination"></div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script src="js/supabase-client.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/exports.js"></script>
+  <script src="js/lista-pqrs.js"></script>
+</body>
+</html>

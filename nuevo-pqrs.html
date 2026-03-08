@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Nuevo PQRS - Pepo's Cake</title>
+  <link rel="stylesheet" href="css/styles.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet" />
+</head>
+<body>
+  <!-- SIDEBAR -->
+  <div class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <div class="sidebar-logo">
+        <span class="logo-emoji-sm">🎂</span>
+        <div>
+          <span class="sidebar-brand">Pepo's Cake</span>
+          <span class="sidebar-sub">PQRS</span>
+        </div>
+      </div>
+      <button class="sidebar-close" id="sidebarClose">✕</button>
+    </div>
+    <nav class="sidebar-nav">
+      <a href="dashboard.html" class="nav-item">
+        <span class="nav-icon">📊</span> Dashboard
+      </a>
+      <a href="nuevo-pqrs.html" class="nav-item active">
+        <span class="nav-icon">➕</span> Nuevo PQRS
+      </a>
+      <a href="lista-pqrs.html" class="nav-item">
+        <span class="nav-icon">📋</span> Todos los PQRS
+      </a>
+      <a href="reportes.html" class="nav-item">
+        <span class="nav-icon">📈</span> Reportes
+      </a>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="user-info" id="userInfo">
+        <span class="user-avatar">👤</span>
+        <div>
+          <span class="user-name" id="userName">Cargando...</span>
+          <span class="user-role" id="userRole"></span>
+        </div>
+      </div>
+      <button class="btn-logout" id="logoutBtn" title="Cerrar sesión">🚪 Salir</button>
+    </div>
+  </div>
+  <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+  <!-- MAIN CONTENT -->
+  <div class="main-content">
+    <header class="topbar">
+      <button class="menu-toggle" id="menuToggle">☰</button>
+      <h2 class="page-title">Registrar Nuevo PQRS</h2>
+    </header>
+
+    <main class="page-body">
+      <div class="card form-card">
+        <div class="card-header">
+          <h3>📝 Información del Caso</h3>
+          <p class="card-subtitle">Complete todos los campos requeridos (*)</p>
+        </div>
+        <div class="card-body">
+          <form id="formNuevoPQRS" novalidate>
+
+            <!-- SECCIÓN 1: DATOS DEL CLIENTE -->
+            <div class="form-section">
+              <h4 class="form-section-title">👤 Datos del Cliente</h4>
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="nombre_cliente">Nombre del cliente *</label>
+                  <input type="text" id="nombre_cliente" name="nombre_cliente"
+                    placeholder="Nombre completo del cliente" required maxlength="200" />
+                  <span class="field-error" id="err-nombre_cliente"></span>
+                </div>
+                <div class="form-group">
+                  <label for="telefono_cliente">Teléfono</label>
+                  <input type="tel" id="telefono_cliente" name="telefono_cliente"
+                    placeholder="Ej: 604 322 09 38" maxlength="30" />
+                </div>
+              </div>
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="correo_cliente">Correo electrónico</label>
+                  <input type="email" id="correo_cliente" name="correo_cliente"
+                    placeholder="cliente@ejemplo.com" maxlength="200" />
+                  <span class="field-error" id="err-correo_cliente"></span>
+                </div>
+              </div>
+            </div>
+
+            <!-- SECCIÓN 2: CLASIFICACIÓN -->
+            <div class="form-section">
+              <h4 class="form-section-title">🏷️ Clasificación del Caso</h4>
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="tipo_solicitud">Tipo de solicitud *</label>
+                  <select id="tipo_solicitud" name="tipo_solicitud" required>
+                    <option value="">-- Seleccione --</option>
+                    <option value="Peticion">Petición</option>
+                    <option value="Queja">Queja</option>
+                    <option value="Reclamo">Reclamo</option>
+                    <option value="Sugerencia">Sugerencia</option>
+                  </select>
+                  <span class="field-error" id="err-tipo_solicitud"></span>
+                </div>
+                <div class="form-group">
+                  <label for="area_responsable">Área responsable *</label>
+                  <select id="area_responsable" name="area_responsable" required>
+                    <option value="">-- Seleccione --</option>
+                    <option value="Produccion">Producción</option>
+                    <option value="Envios">Envíos</option>
+                    <option value="Entrega">Entrega</option>
+                    <option value="Atencion_cliente">Atención al Cliente</option>
+                  </select>
+                  <span class="field-error" id="err-area_responsable"></span>
+                </div>
+              </div>
+              <div class="form-group">
+                <label>Etiquetas <span style="font-weight:400; color:var(--color-text-muted)">(presiona Enter o coma para agregar)</span></label>
+                <div class="tags-container" id="tagsContainer">
+                  <input type="text" class="tag-input" id="tagInput" placeholder="Ej: urgente, devolución..." />
+                </div>
+                <input type="hidden" id="tagsHidden" name="tags" value="[]" />
+              </div>
+            </div>
+
+            <!-- SECCIÓN 3: DESCRIPCIÓN -->
+            <div class="form-section">
+              <h4 class="form-section-title">📄 Descripción del Problema</h4>
+              <div class="form-group">
+                <label for="motivo">Motivo del reclamo *</label>
+                <input type="text" id="motivo" name="motivo"
+                  placeholder="Resumen breve del motivo" required maxlength="300" />
+                <span class="field-error" id="err-motivo"></span>
+              </div>
+              <div class="form-group">
+                <label for="descripcion">Descripción detallada *</label>
+                <textarea id="descripcion" name="descripcion" rows="5"
+                  placeholder="Describa en detalle el problema o solicitud del cliente..." required maxlength="3000"></textarea>
+                <span class="char-count" id="charDesc">0 / 3000</span>
+                <span class="field-error" id="err-descripcion"></span>
+              </div>
+              <div class="form-group">
+                <label for="comentarios_adicionales">Comentarios adicionales</label>
+                <textarea id="comentarios_adicionales" name="comentarios_adicionales" rows="3"
+                  placeholder="Información adicional relevante..." maxlength="2000"></textarea>
+              </div>
+            </div>
+
+            <!-- SECCIÓN 4: EVIDENCIAS -->
+            <div class="form-section">
+              <h4 class="form-section-title">📸 Evidencias Fotográficas</h4>
+              <div class="form-group">
+                <label>Imágenes adjuntas <span style="font-weight:400; color:var(--color-text-muted)">(opcional, máx. 5 imágenes de hasta 5 MB cada una)</span></label>
+                <div class="file-upload-area" id="dropZone">
+                  <span class="file-upload-icon">📁</span>
+                  <p class="file-upload-text">Arrastra imágenes aquí o <strong id="filePickerLink">haz clic para seleccionar</strong></p>
+                  <input type="file" id="evidenciasInput" accept="image/*" multiple style="display:none" />
+                </div>
+                <div class="file-preview-grid" id="filePreviewGrid"></div>
+              </div>
+            </div>
+
+            <!-- ALERTA -->
+            <div id="formAlert" class="alert" style="display:none;"></div>
+
+            <!-- ACCIONES -->
+            <div class="form-actions">
+              <a href="dashboard.html" class="btn btn-outline">Cancelar</a>
+              <button type="submit" class="btn btn-primary" id="btnGuardar">
+                <span class="btn-text">💾 Guardar PQRS</span>
+                <span class="btn-loader" style="display:none;">⏳ Guardando...</span>
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script src="js/supabase-client.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/pqrs.js"></script>
+</body>
+</html>

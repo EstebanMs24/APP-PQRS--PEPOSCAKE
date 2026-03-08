@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Detalle PQRS - Pepo's Cake</title>
+  <link rel="stylesheet" href="css/styles.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet" />
+  <!-- jsPDF para generación de PDF -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+</head>
+<body>
+  <!-- SIDEBAR -->
+  <div class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <div class="sidebar-logo">
+        <span class="logo-emoji-sm">🎂</span>
+        <div>
+          <span class="sidebar-brand">Pepo's Cake</span>
+          <span class="sidebar-sub">PQRS</span>
+        </div>
+      </div>
+      <button class="sidebar-close" id="sidebarClose">✕</button>
+    </div>
+    <nav class="sidebar-nav">
+      <a href="dashboard.html" class="nav-item">
+        <span class="nav-icon">📊</span> Dashboard
+      </a>
+      <a href="nuevo-pqrs.html" class="nav-item">
+        <span class="nav-icon">➕</span> Nuevo PQRS
+      </a>
+      <a href="lista-pqrs.html" class="nav-item active">
+        <span class="nav-icon">📋</span> Todos los PQRS
+      </a>
+      <a href="reportes.html" class="nav-item">
+        <span class="nav-icon">📈</span> Reportes
+      </a>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="user-info" id="userInfo">
+        <span class="user-avatar">👤</span>
+        <div>
+          <span class="user-name" id="userName">Cargando...</span>
+          <span class="user-role" id="userRole"></span>
+        </div>
+      </div>
+      <button class="btn-logout" id="logoutBtn">🚪 Salir</button>
+    </div>
+  </div>
+  <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+  <!-- MAIN -->
+  <div class="main-content">
+    <header class="topbar">
+      <button class="menu-toggle" id="menuToggle">☰</button>
+      <h2 class="page-title" id="paginaTitulo">Detalle del Caso</h2>
+      <div class="topbar-actions">
+        <button class="btn btn-outline btn-sm" id="btnVolver">← Volver</button>
+        <button class="btn btn-danger btn-sm" id="btnPDF">📄 PDF</button>
+      </div>
+    </header>
+
+    <main class="page-body" id="detalleContenido">
+      <div class="loading-state">⏳ Cargando caso...</div>
+    </main>
+  </div>
+
+  <!-- TEMPLATE DEL DETALLE (se clona por JS) -->
+  <template id="templateDetalle">
+    <div class="detalle-layout">
+      <!-- Columna izquierda: info del caso -->
+      <div class="detalle-left">
+        <!-- Encabezado del caso -->
+        <div class="card caso-header-card">
+          <div class="caso-numero-badge">
+            <span id="d-numero_caso"></span>
+          </div>
+          <div class="caso-meta">
+            <span class="badge-estado" id="d-badge-estado"></span>
+            <span class="caso-fecha" id="d-fecha_registro"></span>
+          </div>
+        </div>
+
+        <!-- Datos del cliente -->
+        <div class="card">
+          <div class="card-header"><h3>👤 Datos del Cliente</h3></div>
+          <div class="card-body info-grid">
+            <div class="info-item">
+              <span class="info-label">Nombre</span>
+              <span class="info-value" id="d-nombre_cliente"></span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">Teléfono</span>
+              <span class="info-value" id="d-telefono_cliente"></span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">Correo</span>
+              <span class="info-value" id="d-correo_cliente"></span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Clasificación -->
+        <div class="card">
+          <div class="card-header"><h3>🏷️ Clasificación</h3></div>
+          <div class="card-body info-grid">
+            <div class="info-item">
+              <span class="info-label">Tipo de solicitud</span>
+              <span class="info-value" id="d-tipo_solicitud"></span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">Área responsable</span>
+              <span class="info-value" id="d-area_responsable"></span>
+            </div>
+            <div class="info-item" id="secTags" style="display:none;">
+              <span class="info-label">Etiquetas</span>
+              <div id="d-tags" style="margin-top:0.25rem;"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Descripción -->
+        <div class="card">
+          <div class="card-header"><h3>📄 Descripción del Caso</h3></div>
+          <div class="card-body">
+            <div class="info-item">
+              <span class="info-label">Motivo</span>
+              <span class="info-value" id="d-motivo"></span>
+            </div>
+            <div class="info-item mt-2">
+              <span class="info-label">Descripción detallada</span>
+              <p class="info-text" id="d-descripcion"></p>
+            </div>
+            <div class="info-item mt-2" id="secComentariosAdicionales">
+              <span class="info-label">Comentarios adicionales</span>
+              <p class="info-text" id="d-comentarios_adicionales"></p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Solución (si existe) -->
+        <div class="card" id="cardSolucion" style="display:none;">
+          <div class="card-header"><h3>✅ Solución Registrada</h3></div>
+          <div class="card-body">
+            <p class="info-text" id="d-solucion"></p>
+            <span class="text-muted" id="d-fecha_resolucion"></span>
+          </div>
+        </div>
+
+        <!-- Imágenes de evidencia (si existen) -->
+        <div class="card" id="cardEvidencias" style="display:none;">
+          <div class="card-header"><h3>📸 Evidencias Fotográficas</h3></div>
+          <div class="card-body">
+            <div class="evidencias-grid" id="d-evidencias"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Columna derecha: gestión y seguimiento -->
+      <div class="detalle-right">
+        <!-- Actualizar Estado -->
+        <div class="card">
+          <div class="card-header"><h3>⚙️ Actualizar Estado</h3></div>
+          <div class="card-body">
+            <form id="formActualizarEstado">
+              <div class="form-group">
+                <label>Estado del caso *</label>
+                <select id="nuevoEstado" required>
+                  <option value="Pendiente">⏳ Pendiente</option>
+                  <option value="En_proceso">🔄 En Proceso</option>
+                  <option value="Resuelto">✅ Resuelto</option>
+                </select>
+              </div>
+              <div class="form-group" id="grupoSolucion" style="display:none;">
+                <label>Descripción de la solución *</label>
+                <textarea id="textoSolucion" rows="4"
+                  placeholder="Describe cómo se resolvió el caso..."></textarea>
+              </div>
+              <div class="form-group">
+                <label>Comentario de seguimiento *</label>
+                <textarea id="textoComentario" rows="3"
+                  placeholder="Agrega un comentario sobre esta actualización..." required></textarea>
+              </div>
+              <div id="alertEstado" class="alert" style="display:none;"></div>
+              <button type="submit" class="btn btn-primary btn-block" id="btnActualizar">
+                💾 Actualizar Estado
+              </button>
+            </form>
+          </div>
+        </div>
+
+        <!-- Historial de seguimiento -->
+        <div class="card">
+          <div class="card-header"><h3>📜 Historial de Seguimiento</h3></div>
+          <div class="card-body p-0">
+            <div class="timeline" id="timeline">
+              <div class="text-center p-3">Cargando historial...</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </template>
+
+  <script src="js/supabase-client.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/detalle.js"></script>
+</body>
+</html>
