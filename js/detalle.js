@@ -346,21 +346,22 @@ function generarPDF(caso) {
 }
 
 // ============================================================
-// ELIMINAR PQRS
+// ELIMINAR PQRS (soft delete)
 // ============================================================
 async function eliminarPQRS(db, id) {
   const confirmar = confirm(
-    '¿Estás seguro de que deseas ELIMINAR este PQRS?\n\nEsta acción no se puede deshacer y borrará también todo el historial de seguimiento.'
+    '¿Estás seguro de que deseas ELIMINAR este PQRS?\n\nEl caso se moverá a la papelera y podrás restaurarlo desde la lista de PQRS eliminados.'
   );
   if (!confirmar) return;
 
   const btn = document.getElementById('btnEliminar');
   if (btn) { btn.disabled = true; btn.textContent = '⏳ Eliminando...'; }
 
-  // Eliminar seguimientos primero (por FK)
-  await db.from('seguimiento_pqrs').delete().eq('pqrs_id', id);
+  const { error } = await db
+    .from('pqrs')
+    .update({ eliminado: true, eliminado_en: new Date().toISOString() })
+    .eq('id', id);
 
-  const { error } = await db.from('pqrs').delete().eq('id', id);
   if (error) {
     alert('Error al eliminar el PQRS: ' + error.message);
     if (btn) { btn.disabled = false; btn.textContent = '🗑️ Eliminar'; }

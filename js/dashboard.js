@@ -11,7 +11,7 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 async function cargarEstadisticas(db) {
-  const { data, error } = await db.from('pqrs').select('estado, area_responsable, tipo_solicitud');
+  const { data, error } = await db.from('pqrs').select('estado, area_responsable, tipo_solicitud').eq('eliminado', false);
 
   if (error || !data) return;
 
@@ -51,6 +51,7 @@ async function cargarCasosRecientes(db) {
   const { data, error } = await db
     .from('pqrs')
     .select('id, numero_caso, nombre_cliente, tipo_solicitud, area_responsable, estado, fecha_registro')
+    .eq('eliminado', false)
     .order('fecha_registro', { ascending: false })
     .limit(10);
 
@@ -154,6 +155,7 @@ async function cargarTendencia(db) {
   const { data, error } = await db
     .from('pqrs')
     .select('fecha_registro')
+    .eq('eliminado', false)
     .gte('fecha_registro', primerMes + 'T00:00:00');
 
   if (error || !data) {

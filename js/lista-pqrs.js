@@ -23,19 +23,30 @@ const PAGE_SIZE = 15;
 let currentPage = 1;
 let allData = [];
 let filteredData = [];
+let viendoEliminados = false;
 
 document.addEventListener('DOMContentLoaded', () => {
   withSupabase(async (db) => {
     await cargarTodos(db);
     bindFilters();
     bindExport();
+
+    document.getElementById('btnVerEliminados').addEventListener('click', async () => {
+      viendoEliminados = !viendoEliminados;
+      const btn = document.getElementById('btnVerEliminados');
+      btn.textContent = viendoEliminados ? '📋 Ver Activos' : '🗑️ Ver Eliminados';
+      btn.className = viendoEliminados ? 'btn btn-warning btn-sm' : 'btn btn-outline btn-sm';
+      document.querySelector('.page-title').textContent = viendoEliminados ? 'PQRS Eliminados' : 'Todos los PQRS';
+      await cargarTodos(db);
+    });
   });
 });
 
 async function cargarTodos(db) {
   const { data, error } = await db
     .from('pqrs')
-    .select('id, numero_caso, nombre_cliente, tipo_solicitud, area_responsable, estado, motivo, fecha_registro, tags')
+    .select('id, numero_caso, nombre_cliente, tipo_solicitud, area_responsable, estado, motivo, fecha_registro, tags, eliminado_en')
+    .eq('eliminado', viendoEliminados)
     .order('fecha_registro', { ascending: false });
 
   if (error) {
@@ -125,11 +136,14 @@ function renderTabla(data) {
   }
 
   tbody.innerHTML = data.map(row => {
-    const sla = calcularSLA(row);
-    const slaBadge = sla ? `<span class="sla-badge ${sla.clase}">${sla.texto}</span>` : '—';
+    const sla = viendoEliminados ? null : calcularSLA(row);
+    const slaBadge = sla ? `<span class="sla-badge ${sla.clase}">${sla.texto}</span>` : (viendoEliminados ? `<span style="color:var(--color-text-muted);font-size:0.8rem">${row.eliminado_en ? formatFecha(row.eliminado_en) : '—'}</span>` : '—');
     const tagsBadges = (row.tags || []).map(t => `<span class="tag-badge">${escapeHtml(t)}</span>`).join('');
+    const accion = viendoEliminados
+      ? `<button class="btn btn-outline btn-sm" onclick="restaurarPQRS('${row.id}')">♻️ Restaurar</button>`
+      : `<a href="detalle-pqrs.html?id=${row.id}" class="btn btn-outline btn-sm">👁️ Ver</a>`;
     return `
-    <tr>
+    <tr ${viendoEliminados ? 'style="opacity:0.7"' : ''}>
       <td><strong style="color:var(--color-primary-dark)">${escapeHtml(row.numero_caso)}</strong>${tagsBadges ? '<br>' + tagsBadges : ''}</td>
       <td style="white-space:nowrap">${formatFecha(row.fecha_registro)}</td>
       <td>${escapeHtml(row.nombre_cliente)}</td>
@@ -138,9 +152,7 @@ function renderTabla(data) {
       <td style="max-width:160px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${escapeHtml(row.motivo)}">${escapeHtml(row.motivo)}</td>
       <td>${slaBadge}</td>
       <td>${badgeEstado(row.estado)}</td>
-      <td>
-        <a href="detalle-pqrs.html?id=${row.id}" class="btn btn-outline btn-sm">👁️ Ver</a>
-      </td>
+      <td>${accion}</td>
     </tr>
   `;
   }).join('');
@@ -177,6 +189,19 @@ function bindExport() {
       }
     });
   }
+}
+
+function restaurarPQRS(id) {
+  const confirmar = confirm('¿Restaurar este PQRS? Volverá a aparecer en la lista activa.');
+  if (!confirmar) return;
+  withSupabase(async (db) => {
+    const { error } = await db
+      .from('pqrs')
+      .update({ eliminado: false, eliminado_en: null })
+      .eq('id', id);
+    if (error) { alert('Error al restaurar: ' + error.message); return; }
+    await cargarTodos(db);
+  });
 }
 
 function escapeHtml(str) {
