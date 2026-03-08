@@ -225,9 +225,11 @@ function eliminarDesdeLista(id, numeroCaso) {
   const confirmar = confirm(`¿Eliminar ${numeroCaso}?\n\nEl caso se moverá a la papelera. Podrás restaurarlo desde "Ver Eliminados".`);
   if (!confirmar) return;
   withSupabase(async (db) => {
+    const { data: { user } } = await db.auth.getUser();
+    const eliminadoPor = user?.email || user?.id || 'Desconocido';
     const { error } = await db
       .from('pqrs')
-      .update({ eliminado: true, eliminado_en: new Date().toISOString() })
+      .update({ eliminado: true, eliminado_en: new Date().toISOString(), eliminado_por: eliminadoPor })
       .eq('id', id);
     if (error) { alert('Error al eliminar: ' + error.message); return; }
     mostrarBannerExito(`✅ ${numeroCaso} eliminado y movido a la papelera.`);

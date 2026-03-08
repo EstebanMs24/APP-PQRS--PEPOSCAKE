@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Dashboard - PQRS Pepo's Cake</title>
   <link rel="stylesheet" href="css/styles.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet" />
 </head>
@@ -13,39 +14,35 @@
   <div class="sidebar" id="sidebar">
     <div class="sidebar-header">
       <div class="sidebar-logo">
-        <span class="logo-emoji-sm">🎂</span>
-        <div>
-          <span class="sidebar-brand">Pepo's Cake</span>
-          <span class="sidebar-sub">PQRS</span>
-        </div>
+        <img src="img/peposcakecompleto.png" class="sidebar-logo-img" alt="Pepo's Cake PQRS" />
       </div>
-      <button class="sidebar-close" id="sidebarClose">✕</button>
+      <button class="sidebar-close" id="sidebarClose"><i class="bi bi-x-lg"></i></button>
     </div>
 
     <nav class="sidebar-nav">
       <a href="dashboard.html" class="nav-item active">
-        <span class="nav-icon">📊</span> Dashboard
+        <span class="nav-icon"><i class="bi bi-speedometer2"></i></span> Dashboard
       </a>
       <a href="nuevo-pqrs.html" class="nav-item">
-        <span class="nav-icon">➕</span> Nuevo PQRS
+        <span class="nav-icon"><i class="bi bi-plus-circle-fill"></i></span> Nuevo PQRS
       </a>
       <a href="lista-pqrs.html" class="nav-item">
-        <span class="nav-icon">📋</span> Todos los PQRS
+        <span class="nav-icon"><i class="bi bi-list-ul"></i></span> Todos los PQRS
       </a>
       <a href="reportes.html" class="nav-item">
-        <span class="nav-icon">📈</span> Reportes
+        <span class="nav-icon"><i class="bi bi-bar-chart-fill"></i></span> Reportes
       </a>
     </nav>
 
     <div class="sidebar-footer">
       <div class="user-info" id="userInfo">
-        <span class="user-avatar">👤</span>
+        <span class="user-avatar"><i class="bi bi-person-circle"></i></span>
         <div>
           <span class="user-name" id="userName">Cargando...</span>
           <span class="user-role" id="userRole"></span>
         </div>
       </div>
-      <button class="btn-logout" id="logoutBtn" title="Cerrar sesión">🚪 Salir</button>
+      <button class="btn-logout" id="logoutBtn" title="Cerrar sesión"><i class="bi bi-box-arrow-left"></i> Salir</button>
     </div>
   </div>
 
@@ -56,11 +53,11 @@
   <div class="main-content">
     <!-- TOPBAR -->
     <header class="topbar">
-      <button class="menu-toggle" id="menuToggle">☰</button>
+      <button class="menu-toggle" id="menuToggle"><i class="bi bi-list"></i></button>
       <h2 class="page-title">Dashboard</h2>
       <div class="topbar-actions">
         <a href="nuevo-pqrs.html" class="btn btn-primary btn-sm">
-          ➕ Nuevo PQRS
+          <i class="bi bi-plus-circle-fill"></i> Nuevo PQRS
         </a>
       </div>
     </header>
@@ -68,40 +65,47 @@
     <!-- PAGE BODY -->
     <main class="page-body">
       <!-- TARJETAS DE ESTADÍSTICAS -->
-      <section class="stats-grid stats-grid-5">
+      <section class="stats-grid stats-grid-6">
         <div class="stat-card stat-total">
-          <div class="stat-icon">📋</div>
+          <div class="stat-icon"><i class="bi bi-inbox-fill"></i></div>
           <div class="stat-info">
             <span class="stat-number" id="statTotal">--</span>
             <span class="stat-label">Total PQRS</span>
           </div>
         </div>
         <div class="stat-card stat-pendiente">
-          <div class="stat-icon">⏳</div>
+          <div class="stat-icon"><i class="bi bi-hourglass-split"></i></div>
           <div class="stat-info">
             <span class="stat-number" id="statPendiente">--</span>
             <span class="stat-label">Pendientes</span>
           </div>
         </div>
         <div class="stat-card stat-proceso">
-          <div class="stat-icon">🔄</div>
+          <div class="stat-icon"><i class="bi bi-arrow-repeat"></i></div>
           <div class="stat-info">
             <span class="stat-number" id="statProceso">--</span>
             <span class="stat-label">En Proceso</span>
           </div>
         </div>
         <div class="stat-card stat-resuelto">
-          <div class="stat-icon">✅</div>
+          <div class="stat-icon"><i class="bi bi-check-circle-fill"></i></div>
           <div class="stat-info">
             <span class="stat-number" id="statResuelto">--</span>
             <span class="stat-label">Resueltos</span>
           </div>
         </div>
         <div class="stat-card stat-eliminado">
-          <div class="stat-icon">🗑️</div>
+          <div class="stat-icon"><i class="bi bi-trash3-fill"></i></div>
           <div class="stat-info">
             <span class="stat-number" id="statEliminado">--</span>
             <span class="stat-label">Eliminados</span>
+          </div>
+        </div>
+        <div class="stat-card stat-sla-vencido">
+          <div class="stat-icon"><i class="bi bi-alarm-fill"></i></div>
+          <div class="stat-info">
+            <span class="stat-number" id="statSlaVencido">--</span>
+            <span class="stat-label">SLA Vencido</span>
           </div>
         </div>
       </section>

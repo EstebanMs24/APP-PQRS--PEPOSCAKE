@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Detalle PQRS - Pepo's Cake</title>
   <link rel="stylesheet" href="css/styles.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet" />
   <!-- jsPDF para generación de PDF -->
@@ -15,37 +16,33 @@
   <div class="sidebar" id="sidebar">
     <div class="sidebar-header">
       <div class="sidebar-logo">
-        <span class="logo-emoji-sm">🎂</span>
-        <div>
-          <span class="sidebar-brand">Pepo's Cake</span>
-          <span class="sidebar-sub">PQRS</span>
-        </div>
+        <img src="img/peposcakecompleto.png" class="sidebar-logo-img" alt="Pepo's Cake PQRS" />
       </div>
-      <button class="sidebar-close" id="sidebarClose">✕</button>
+      <button class="sidebar-close" id="sidebarClose"><i class="bi bi-x-lg"></i></button>
     </div>
     <nav class="sidebar-nav">
       <a href="dashboard.html" class="nav-item">
-        <span class="nav-icon">📊</span> Dashboard
+        <span class="nav-icon"><i class="bi bi-speedometer2"></i></span> Dashboard
       </a>
       <a href="nuevo-pqrs.html" class="nav-item">
-        <span class="nav-icon">➕</span> Nuevo PQRS
+        <span class="nav-icon"><i class="bi bi-plus-circle-fill"></i></span> Nuevo PQRS
       </a>
       <a href="lista-pqrs.html" class="nav-item active">
-        <span class="nav-icon">📋</span> Todos los PQRS
+        <span class="nav-icon"><i class="bi bi-list-ul"></i></span> Todos los PQRS
       </a>
       <a href="reportes.html" class="nav-item">
-        <span class="nav-icon">📈</span> Reportes
+        <span class="nav-icon"><i class="bi bi-bar-chart-fill"></i></span> Reportes
       </a>
     </nav>
     <div class="sidebar-footer">
       <div class="user-info" id="userInfo">
-        <span class="user-avatar">👤</span>
+        <span class="user-avatar"><i class="bi bi-person-circle"></i></span>
         <div>
           <span class="user-name" id="userName">Cargando...</span>
           <span class="user-role" id="userRole"></span>
         </div>
       </div>
-      <button class="btn-logout" id="logoutBtn">🚪 Salir</button>
+      <button class="btn-logout" id="logoutBtn"><i class="bi bi-box-arrow-left"></i> Salir</button>
     </div>
   </div>
   <div class="sidebar-overlay" id="sidebarOverlay"></div>
@@ -53,12 +50,12 @@
   <!-- MAIN -->
   <div class="main-content">
     <header class="topbar">
-      <button class="menu-toggle" id="menuToggle">☰</button>
+      <button class="menu-toggle" id="menuToggle"><i class="bi bi-list"></i></button>
       <h2 class="page-title" id="paginaTitulo">Detalle del Caso</h2>
       <div class="topbar-actions">
-        <button class="btn btn-outline btn-sm" id="btnVolver">← Volver</button>
-        <button class="btn btn-outline-danger btn-sm" id="btnEliminar">🗑️ Eliminar</button>
-        <button class="btn btn-danger btn-sm" id="btnPDF">📄 PDF</button>
+        <button class="btn btn-outline btn-sm" id="btnVolver"><i class="bi bi-arrow-left"></i> Volver</button>
+        <button class="btn btn-outline-danger btn-sm" id="btnEliminar"><i class="bi bi-trash3"></i> Eliminar</button>
+        <button class="btn btn-danger btn-sm" id="btnPDF"><i class="bi bi-file-pdf-fill"></i> PDF</button>
       </div>
     </header>
 
@@ -85,7 +82,7 @@
 
         <!-- Datos del cliente -->
         <div class="card">
-          <div class="card-header"><h3>👤 Datos del Cliente</h3></div>
+          <div class="card-header"><h3><i class="bi bi-person-fill"></i> Datos del Cliente</h3></div>
           <div class="card-body info-grid">
             <div class="info-item">
               <span class="info-label">Nombre</span>
@@ -104,7 +101,7 @@
 
         <!-- Clasificación -->
         <div class="card">
-          <div class="card-header"><h3>🏷️ Clasificación</h3></div>
+          <div class="card-header"><h3><i class="bi bi-tags-fill"></i> Clasificación</h3></div>
           <div class="card-body info-grid">
             <div class="info-item">
               <span class="info-label">Tipo de solicitud</span>
@@ -123,7 +120,7 @@
 
         <!-- Descripción -->
         <div class="card">
-          <div class="card-header"><h3>📄 Descripción del Caso</h3></div>
+          <div class="card-header"><h3><i class="bi bi-file-text-fill"></i> Descripción del Caso</h3></div>
           <div class="card-body">
             <div class="info-item">
               <span class="info-label">Motivo</span>
@@ -142,7 +139,7 @@
 
         <!-- Solución (si existe) -->
         <div class="card" id="cardSolucion" style="display:none;">
-          <div class="card-header"><h3>✅ Solución Registrada</h3></div>
+          <div class="card-header"><h3><i class="bi bi-check-circle-fill"></i> Solución Registrada</h3></div>
           <div class="card-body">
             <p class="info-text" id="d-solucion"></p>
             <span class="text-muted" id="d-fecha_resolucion"></span>
@@ -151,7 +148,7 @@
 
         <!-- Imágenes de evidencia (si existen) -->
         <div class="card" id="cardEvidencias" style="display:none;">
-          <div class="card-header"><h3>📸 Evidencias Fotográficas</h3></div>
+          <div class="card-header"><h3><i class="bi bi-images"></i> Evidencias Fotográficas</h3></div>
           <div class="card-body">
             <div class="evidencias-grid" id="d-evidencias"></div>
           </div>
@@ -162,15 +159,15 @@
       <div class="detalle-right">
         <!-- Actualizar Estado -->
         <div class="card">
-          <div class="card-header"><h3>⚙️ Actualizar Estado</h3></div>
+          <div class="card-header"><h3><i class="bi bi-gear-fill"></i> Actualizar Estado</h3></div>
           <div class="card-body">
             <form id="formActualizarEstado">
               <div class="form-group">
                 <label>Estado del caso *</label>
                 <select id="nuevoEstado" required>
-                  <option value="Pendiente">⏳ Pendiente</option>
-                  <option value="En_proceso">🔄 En Proceso</option>
-                  <option value="Resuelto">✅ Resuelto</option>
+                  <option value="Pendiente"><i class="bi bi-hourglass-split"></i> Pendiente</option>
+                  <option value="En_proceso">En Proceso</option>
+                  <option value="Resuelto">Resuelto</option>
                 </select>
               </div>
               <div class="form-group" id="grupoSolucion" style="display:none;">
@@ -185,7 +182,7 @@
               </div>
               <div id="alertEstado" class="alert" style="display:none;"></div>
               <button type="submit" class="btn btn-primary btn-block" id="btnActualizar">
-                💾 Actualizar Estado
+                <i class="bi bi-floppy-fill"></i> Actualizar Estado
               </button>
             </form>
           </div>
@@ -193,7 +190,7 @@
 
         <!-- Historial de seguimiento -->
         <div class="card">
-          <div class="card-header"><h3>📜 Historial de Seguimiento</h3></div>
+          <div class="card-header"><h3><i class="bi bi-clock-history"></i> Historial de Seguimiento</h3></div>
           <div class="card-body p-0">
             <div class="timeline" id="timeline">
               <div class="text-center p-3">Cargando historial...</div>

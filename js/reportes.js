@@ -11,11 +11,11 @@ document.addEventListener('DOMContentLoaded', () => {
       const desde = document.getElementById('reporteDesde').value || null;
       const hasta = document.getElementById('reporteHasta').value || null;
       btn.disabled = true;
-      btn.textContent = '⏳ Generando...';
+      btn.innerHTML = '<i class="bi bi-hourglass-split"></i> Generando...';
       await generarReporte(db, desde, hasta);
       btn.disabled = false;
-      btn.textContent = '✅ Reporte generado';
-      setTimeout(() => { btn.textContent = '📊 Generar'; }, 2000);
+      btn.innerHTML = '<i class="bi bi-check-circle-fill"></i> Generado';
+      setTimeout(() => { btn.innerHTML = '<i class="bi bi-funnel-fill"></i> Generar'; }, 2000);
     });
 
     document.getElementById('btnReporteTodo').addEventListener('click', async () => {
@@ -23,11 +23,10 @@ document.addEventListener('DOMContentLoaded', () => {
       document.getElementById('reporteDesde').value = '';
       document.getElementById('reporteHasta').value = '';
       btn.disabled = true;
-      btn.textContent = '⏳ Cargando...';
+      btn.textContent = 'Cargando...';
       await generarReporte(db, null, null);
       btn.disabled = false;
-      btn.textContent = '✅ Todo cargado';
-      setTimeout(() => { btn.textContent = 'Ver Todo'; }, 2000);
+      btn.textContent = 'Ver Todo';
     });
 
     document.getElementById('btnExportExcel').addEventListener('click', async () => {
@@ -41,6 +40,12 @@ document.addEventListener('DOMContentLoaded', () => {
         exportToExcel(data || [], 'Reporte_PQRS_PeposCake');
       }
     });
+
+    // Exportar PDF
+    const btnPDF = document.getElementById('btnExportPDF');
+    if (btnPDF) {
+      btnPDF.addEventListener('click', () => exportarPDF());
+    }
   });
 });
 
@@ -175,4 +180,113 @@ function renderBarChart(containerId, data, total, labelMap) {
 function setText(id, value) {
   const el = document.getElementById(id);
   if (el) el.textContent = value;
+}
+
+// ============================================================
+// EXPORTAR PDF (jsPDF)
+// ============================================================
+function exportarPDF() {
+  if (typeof window.jspdf === 'undefined' && typeof window.jsPDF === 'undefined') {
+    alert('El generador de PDF no está disponible aún. Intenta en unos segundos.');
+    return;
+  }
+  const { jsPDF } = window.jspdf || window;
+  const doc = new jsPDF({ orientation: 'p', unit: 'mm', format: 'a4' });
+
+  const margenIzq = 15;
+  const anchoPagina = 180;
+  let y = 20;
+
+  // Encabezado
+  doc.setFontSize(18);
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(78, 205, 196);
+  doc.text("Pepo's Cake — Reporte PQRS", margenIzq, y);
+  y += 7;
+
+  doc.setFontSize(9);
+  doc.setFont('helvetica', 'normal');
+  doc.setTextColor(100, 100, 100);
+  const fechaGen = new Date().toLocaleDateString('es-CO', { day: '2-digit', month: 'long', year: 'numeric' });
+  doc.text('Generado el: ' + fechaGen, margenIzq, y);
+  y += 8;
+
+  // Línea separadora
+  doc.setDrawColor(78, 205, 196);
+  doc.setLineWidth(0.5);
+  doc.line(margenIzq, y, margenIzq + anchoPagina, y);
+  y += 8;
+
+  // KPIs
+  const kpis = [
+    { label: 'Total PQRS',          id: 'rTotal' },
+    { label: 'Pendientes',           id: 'rPendiente' },
+    { label: 'En Proceso',           id: 'rProceso' },
+    { label: 'Resueltos',            id: 'rResuelto' },
+    { label: 'Tasa de Resolución',   id: 'rTasa' },
+  ];
+
+  doc.setFontSize(12);
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(30, 30, 30);
+  doc.text('Resumen de KPIs', margenIzq, y);
+  y += 6;
+
+  doc.setFontSize(10);
+  doc.setFont('helvetica', 'normal');
+  kpis.forEach(kpi => {
+    const val = document.getElementById(kpi.id)?.textContent || '--';
+    doc.text(`${kpi.label}: ${val}`, margenIzq + 4, y);
+    y += 6;
+  });
+  y += 4;
+
+  // Tabla mensual
+  const tbody = document.getElementById('tbodyMeses');
+  if (tbody && tbody.rows.length > 0) {
+    doc.setFontSize(12);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(30, 30, 30);
+    doc.text('Resumen Mensual', margenIzq, y);
+    y += 7;
+
+    // Cabecera tabla
+    const cols = ['Mes', 'Total', 'Pendientes', 'En Proceso', 'Resueltos', '% Resol.'];
+    const colWidths = [45, 20, 28, 28, 28, 25];
+    let x = margenIzq;
+
+    doc.setFillColor(78, 205, 196);
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'bold');
+    doc.rect(x, y - 4, anchoPagina, 7, 'F');
+    cols.forEach((col, i) => {
+      doc.text(col, x + 2, y);
+      x += colWidths[i];
+    });
+    y += 5;
+
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(30, 30, 30);
+    let alt = false;
+    Array.from(tbody.rows).forEach(row => {
+      if (y > 270) { doc.addPage(); y = 20; }
+      if (alt) {
+        doc.setFillColor(240, 249, 248);
+        doc.rect(margenIzq, y - 4, anchoPagina, 6.5, 'F');
+      }
+      alt = !alt;
+      x = margenIzq;
+      Array.from(row.cells).forEach((cell, i) => {
+        doc.text(cell.textContent.trim().substring(0, 22), x + 2, y);
+        x += colWidths[i];
+      });
+      y += 6.5;
+    });
+  }
+
+  const desde = document.getElementById('reporteDesde')?.value || '';
+  const hasta = document.getElementById('reporteHasta')?.value || '';
+  const sufijo = desde && hasta ? `_${desde}_${hasta}` : '';
+  doc.save(`Reporte_PQRS_PeposCake${sufijo}.pdf`);
 }

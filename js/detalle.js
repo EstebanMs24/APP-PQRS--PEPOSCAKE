@@ -357,9 +357,16 @@ async function eliminarPQRS(db, id) {
   const btn = document.getElementById('btnEliminar');
   if (btn) { btn.disabled = true; btn.textContent = '⏳ Eliminando...'; }
 
+  const { data: { user } } = await db.auth.getUser();
+  const eliminadoPor = user?.email || user?.id || 'Desconocido';
+
   const { error } = await db
     .from('pqrs')
-    .update({ eliminado: true, eliminado_en: new Date().toISOString() })
+    .update({
+      eliminado: true,
+      eliminado_en: new Date().toISOString(),
+      eliminado_por: eliminadoPor,
+    })
     .eq('id', id);
 
   if (error) {

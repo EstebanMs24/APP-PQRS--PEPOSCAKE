@@ -7,11 +7,23 @@ document.addEventListener('DOMContentLoaded', () => {
     await cargarEstadisticas(db);
     await cargarCasosRecientes(db);
     await cargarTendencia(db);
+
+    // Realtime: recargar estadísticas ante cualquier cambio en pqrs
+    try {
+      db.channel('dashboard_realtime')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'pqrs' }, () => {
+          cargarEstadisticas(db);
+          cargarCasosRecientes(db);
+        })
+        .subscribe();
+    } catch (e) { /* realtime opcional */ }
   });
 });
 
 async function cargarEstadisticas(db) {
-  const { data, error } = await db.from('pqrs').select('estado, area_responsable, tipo_solicitud').neq('eliminado', true);
+  const { data, error } = await db.from('pqrs')
+    .select('estado, area_responsable, tipo_solicitud, fecha_registro')
+    .neq('eliminado', true);
 
   if (error || !data) { console.error('Error stats:', error); return; }
 
@@ -24,6 +36,17 @@ async function cargarEstadisticas(db) {
   setText('statPendiente', pendiente);
   setText('statProceso', proceso);
   setText('statResuelto', resuelto);
+
+  // SLA Vencido: activos cuyo plazo ha expirado
+  const SLA_DIAS = { Peticion: 15, Queja: 10, Reclamo: 15, Sugerencia: 30 };
+  const hoy = Date.now();
+  const slaVencidos = data.filter(d => {
+    if (d.estado === 'Resuelto') return false;
+    const limite = SLA_DIAS[d.tipo_solicitud] || 15;
+    const dias = (hoy - new Date(d.fecha_registro).getTime()) / 86400000;
+    return dias > limite;
+  }).length;
+  setText('statSlaVencido', slaVencidos);
 
   // Contar eliminados
   const { count: countEliminados, error: errCount } = await db

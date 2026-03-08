@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Lista de PQRS - Pepo's Cake</title>
   <link rel="stylesheet" href="css/styles.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet" />
 </head>
@@ -13,37 +14,33 @@
   <div class="sidebar" id="sidebar">
     <div class="sidebar-header">
       <div class="sidebar-logo">
-        <span class="logo-emoji-sm">🎂</span>
-        <div>
-          <span class="sidebar-brand">Pepo's Cake</span>
-          <span class="sidebar-sub">PQRS</span>
-        </div>
+        <img src="img/peposcakecompleto.png" class="sidebar-logo-img" alt="Pepo's Cake PQRS" />
       </div>
-      <button class="sidebar-close" id="sidebarClose">✕</button>
+      <button class="sidebar-close" id="sidebarClose"><i class="bi bi-x-lg"></i></button>
     </div>
     <nav class="sidebar-nav">
       <a href="dashboard.html" class="nav-item">
-        <span class="nav-icon">📊</span> Dashboard
+        <span class="nav-icon"><i class="bi bi-speedometer2"></i></span> Dashboard
       </a>
       <a href="nuevo-pqrs.html" class="nav-item">
-        <span class="nav-icon">➕</span> Nuevo PQRS
+        <span class="nav-icon"><i class="bi bi-plus-circle-fill"></i></span> Nuevo PQRS
       </a>
       <a href="lista-pqrs.html" class="nav-item active">
-        <span class="nav-icon">📋</span> Todos los PQRS
+        <span class="nav-icon"><i class="bi bi-list-ul"></i></span> Todos los PQRS
       </a>
       <a href="reportes.html" class="nav-item">
-        <span class="nav-icon">📈</span> Reportes
+        <span class="nav-icon"><i class="bi bi-bar-chart-fill"></i></span> Reportes
       </a>
     </nav>
     <div class="sidebar-footer">
       <div class="user-info" id="userInfo">
-        <span class="user-avatar">👤</span>
+        <span class="user-avatar"><i class="bi bi-person-circle"></i></span>
         <div>
           <span class="user-name" id="userName">Cargando...</span>
           <span class="user-role" id="userRole"></span>
         </div>
       </div>
-      <button class="btn-logout" id="logoutBtn">🚪 Salir</button>
+      <button class="btn-logout" id="logoutBtn"><i class="bi bi-box-arrow-left"></i> Salir</button>
     </div>
   </div>
   <div class="sidebar-overlay" id="sidebarOverlay"></div>
@@ -51,12 +48,12 @@
   <!-- MAIN -->
   <div class="main-content">
     <header class="topbar">
-      <button class="menu-toggle" id="menuToggle">☰</button>
+      <button class="menu-toggle" id="menuToggle"><i class="bi bi-list"></i></button>
       <h2 class="page-title">Todos los PQRS</h2>
       <div class="topbar-actions">
-        <button class="btn btn-outline btn-sm" id="btnVerEliminados">🗑️ Ver Eliminados</button>
-        <button class="btn btn-success btn-sm" id="btnExportExcel">📊 Excel</button>
-        <a href="nuevo-pqrs.html" class="btn btn-primary btn-sm">➕ Nuevo</a>
+        <button class="btn btn-outline btn-sm" id="btnVerEliminados"><i class="bi bi-trash3"></i> Ver Eliminados</button>
+        <button class="btn btn-success btn-sm" id="btnExportExcel"><i class="bi bi-file-earmark-excel-fill"></i> Excel</button>
+        <a href="nuevo-pqrs.html" class="btn btn-primary btn-sm"><i class="bi bi-plus-circle-fill"></i> Nuevo</a>
       </div>
     </header>
 
@@ -113,8 +110,8 @@
               <input type="text" id="filtroTag" placeholder="Buscar por etiqueta..." />
             </div>
             <div class="form-group filter-actions">
-              <button class="btn btn-primary" id="btnFiltrar">🔍 Filtrar</button>
-              <button class="btn btn-outline" id="btnLimpiar">✕ Limpiar</button>
+              <button class="btn btn-primary" id="btnFiltrar"><i class="bi bi-funnel-fill"></i> Filtrar</button>
+              <button class="btn btn-outline" id="btnLimpiar"><i class="bi bi-x-circle"></i> Limpiar</button>
             </div>
           </div>
         </div>
