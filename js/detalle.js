@@ -368,7 +368,13 @@ async function eliminarPQRS(db, id) {
     return;
   }
 
-  window.location.href = 'lista-pqrs.html';
+  // Mostrar mensaje de éxito antes de redirigir
+  if (btn) { btn.textContent = '✅ Eliminado'; btn.className = 'btn btn-success btn-sm'; }
+  const toast = document.createElement('div');
+  toast.style.cssText = 'position:fixed;top:1.5rem;left:50%;transform:translateX(-50%);background:#2e7d32;color:#fff;padding:0.9rem 2rem;border-radius:8px;font-weight:700;font-size:1rem;z-index:9999;box-shadow:0 4px 16px rgba(0,0,0,0.25);';
+  toast.textContent = '✅ PQRS eliminado correctamente y movido a la papelera.';
+  document.body.appendChild(toast);
+  setTimeout(() => { window.location.href = 'lista-pqrs.html?eliminado=1'; }, 1800);
 }
 
 // ---- HELPERS ----

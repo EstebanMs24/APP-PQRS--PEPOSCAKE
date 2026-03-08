@@ -25,6 +25,13 @@ async function cargarEstadisticas(db) {
   setText('statProceso', proceso);
   setText('statResuelto', resuelto);
 
+  // Contar eliminados
+  const { count: countEliminados } = await db
+    .from('pqrs')
+    .select('id', { count: 'exact', head: true })
+    .eq('eliminado', true);
+  setText('statEliminado', countEliminados ?? 0);
+
   // Gráfico por área
   const porArea = groupBy(data, 'area_responsable');
   renderBarChart('chartArea', porArea, total, {

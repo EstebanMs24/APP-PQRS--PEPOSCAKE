@@ -27,6 +27,18 @@ let viendoEliminados = false;
 
 document.addEventListener('DOMContentLoaded', () => {
   withSupabase(async (db) => {
+    // Si llegamos desde una eliminación, mostrar vista de eliminados + banner
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('eliminado') === '1') {
+      viendoEliminados = true;
+      mostrarBannerExito('✅ PQRS eliminado correctamente. Aparece en la papelera a continuación.');
+      const btn = document.getElementById('btnVerEliminados');
+      if (btn) { btn.textContent = '📋 Ver Activos'; btn.className = 'btn btn-warning btn-sm'; }
+      document.querySelector('.page-title').textContent = 'PQRS Eliminados';
+      // Limpiar el param de la URL sin recargar
+      history.replaceState(null, '', 'lista-pqrs.html');
+    }
+
     await cargarTodos(db);
     bindFilters();
     bindExport();
@@ -41,6 +53,14 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 });
+
+function mostrarBannerExito(mensaje) {
+  const banner = document.getElementById('bannerExito');
+  if (!banner) return;
+  banner.textContent = mensaje;
+  banner.style.display = 'block';
+  setTimeout(() => { banner.style.display = 'none'; }, 5000);
+}
 
 async function cargarTodos(db) {
   const { data, error } = await db
