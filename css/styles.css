@@ -386,6 +386,8 @@ img { max-width: 100%; }
 .btn-success:hover:not(:disabled) { filter: brightness(0.9); }
 .btn-danger { background: var(--color-danger); color: #fff; border-color: var(--color-danger); }
 .btn-danger:hover:not(:disabled) { filter: brightness(0.9); }
+.btn-outline-danger { background: transparent; color: var(--color-danger); border: 1.5px solid var(--color-danger); }
+.btn-outline-danger:hover:not(:disabled) { background: var(--color-danger); color: #fff; }
 .btn-sm { padding: 0.4rem 0.9rem; font-size: 0.82rem; }
 .btn-block { width: 100%; }
 

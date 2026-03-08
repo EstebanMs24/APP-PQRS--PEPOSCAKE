@@ -23,6 +23,10 @@ document.addEventListener('DOMContentLoaded', () => {
     // Botón PDF
     const btnPDF = document.getElementById('btnPDF');
     if (btnPDF) btnPDF.addEventListener('click', () => generarPDF(casoActual));
+
+    // Botón Eliminar
+    const btnEliminar = document.getElementById('btnEliminar');
+    if (btnEliminar) btnEliminar.addEventListener('click', () => eliminarPQRS(db, id));
   });
 });
 
@@ -85,6 +89,20 @@ async function cargarDetalle(db, id) {
     setDetalle('d-solucion', data.solucion);
     if (data.fecha_resolucion) {
       setDetalle('d-fecha_resolucion', 'Resuelto el ' + formatFecha(data.fecha_resolucion));
+    }
+  }
+
+  // Evidencias fotográficas
+  if (data.imagenes && Array.isArray(data.imagenes) && data.imagenes.length > 0) {
+    const cardEv = document.getElementById('cardEvidencias');
+    const gridEv = document.getElementById('d-evidencias');
+    if (cardEv && gridEv) {
+      cardEv.style.display = '';
+      gridEv.innerHTML = data.imagenes.map(url => `
+        <a href="${url}" target="_blank" rel="noopener noreferrer">
+          <img src="${url}" alt="Evidencia fotográfica" class="evidencia-img" />
+        </a>
+      `).join('');
     }
   }
 
@@ -325,6 +343,31 @@ function generarPDF(caso) {
   }
 
   doc.save(`PQRS_${caso.numero_caso}.pdf`);
+}
+
+// ============================================================
+// ELIMINAR PQRS
+// ============================================================
+async function eliminarPQRS(db, id) {
+  const confirmar = confirm(
+    '¿Estás seguro de que deseas ELIMINAR este PQRS?\n\nEsta acción no se puede deshacer y borrará también todo el historial de seguimiento.'
+  );
+  if (!confirmar) return;
+
+  const btn = document.getElementById('btnEliminar');
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ Eliminando...'; }
+
+  // Eliminar seguimientos primero (por FK)
+  await db.from('seguimiento_pqrs').delete().eq('pqrs_id', id);
+
+  const { error } = await db.from('pqrs').delete().eq('id', id);
+  if (error) {
+    alert('Error al eliminar el PQRS: ' + error.message);
+    if (btn) { btn.disabled = false; btn.textContent = '🗑️ Eliminar'; }
+    return;
+  }
+
+  window.location.href = 'lista-pqrs.html';
 }
 
 // ---- HELPERS ----

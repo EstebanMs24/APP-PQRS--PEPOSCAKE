@@ -6,16 +6,28 @@ document.addEventListener('DOMContentLoaded', () => {
   withSupabase(async (db) => {
     await generarReporte(db, null, null);
 
-    document.getElementById('btnGenerarReporte').addEventListener('click', () => {
+    document.getElementById('btnGenerarReporte').addEventListener('click', async () => {
+      const btn = document.getElementById('btnGenerarReporte');
       const desde = document.getElementById('reporteDesde').value || null;
       const hasta = document.getElementById('reporteHasta').value || null;
-      generarReporte(db, desde, hasta);
+      btn.disabled = true;
+      btn.textContent = '⏳ Generando...';
+      await generarReporte(db, desde, hasta);
+      btn.disabled = false;
+      btn.textContent = '✅ Reporte generado';
+      setTimeout(() => { btn.textContent = '📊 Generar'; }, 2000);
     });
 
-    document.getElementById('btnReporteTodo').addEventListener('click', () => {
+    document.getElementById('btnReporteTodo').addEventListener('click', async () => {
+      const btn = document.getElementById('btnReporteTodo');
       document.getElementById('reporteDesde').value = '';
       document.getElementById('reporteHasta').value = '';
-      generarReporte(db, null, null);
+      btn.disabled = true;
+      btn.textContent = '⏳ Cargando...';
+      await generarReporte(db, null, null);
+      btn.disabled = false;
+      btn.textContent = '✅ Todo cargado';
+      setTimeout(() => { btn.textContent = 'Ver Todo'; }, 2000);
     });
 
     document.getElementById('btnExportExcel').addEventListener('click', async () => {
