@@ -135,6 +135,25 @@ async function handleSubmit(e) {
   withSupabase(async (db) => {
     const user = await getCurrentUser();
 
+    // Asegurar que el usuario existe en la tabla usuarios (por si fue creado directo desde el panel de Supabase)
+    if (user) {
+      const { data: usuarioExiste } = await db
+        .from('usuarios')
+        .select('id')
+        .eq('id', user.id)
+        .single();
+
+      if (!usuarioExiste) {
+        const emailUser = user.email || '';
+        await db.from('usuarios').insert({
+          id: user.id,
+          correo: emailUser,
+          nombre: user.user_metadata?.nombre || emailUser.split('@')[0],
+          rol: 'agente'
+        });
+      }
+    }
+
     // Upload images first
     const imageUrls = [];
     if (selectedFiles.length > 0) {
