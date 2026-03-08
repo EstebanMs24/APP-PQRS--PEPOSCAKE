@@ -3,6 +3,17 @@
 
 [build]
   publish = "."
+
+# Evitar caché de archivos JS/CSS para siempre servir la versión más reciente
+[[headers]]
+  for = "/js/*"
+  [headers.values]
+    Cache-Control = "no-cache, no-store, must-revalidate"
+
+[[headers]]
+  for = "/css/*"
+  [headers.values]
+    Cache-Control = "no-cache, no-store, must-revalidate"
   
 # ---- REDIRECTS ----
 # Redirigir rutas directas al index para SPA-like navigation

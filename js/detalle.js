@@ -350,7 +350,7 @@ function generarPDF(caso) {
 // ============================================================
 async function eliminarPQRS(db, id) {
   const confirmar = confirm(
-    '¿Estás seguro de que deseas ELIMINAR este PQRS?\n\nEl caso se moverá a la papelera y podrás restaurarlo desde la lista de PQRS eliminados.'
+    '¿Estás seguro de que deseas ELIMINAR este PQRS?\n\nEl caso se moverá a la papelera y podrás restaurarlo desde "Ver Eliminados".'
   );
   if (!confirmar) return;
 
@@ -363,16 +363,25 @@ async function eliminarPQRS(db, id) {
     .eq('id', id);
 
   if (error) {
-    alert('Error al eliminar el PQRS: ' + error.message);
+    alert('❌ Error al eliminar: ' + error.message);
     if (btn) { btn.disabled = false; btn.textContent = '🗑️ Eliminar'; }
     return;
   }
 
-  // Mostrar mensaje de éxito antes de redirigir
+  // Verificar que realmente se guardó (RLS puede bloquear sin error)
+  const { data: verificacion } = await db
+    .from('pqrs').select('eliminado').eq('id', id).single();
+
+  if (!verificacion || verificacion.eliminado !== true) {
+    alert('❌ No se pudo eliminar. Puede ser un problema de permisos en la base de datos.\n\nAsegúrate de haber ejecutado el SQL de permisos en Supabase.');
+    if (btn) { btn.disabled = false; btn.textContent = '🗑️ Eliminar'; }
+    return;
+  }
+
   if (btn) { btn.textContent = '✅ Eliminado'; btn.className = 'btn btn-success btn-sm'; }
   const toast = document.createElement('div');
   toast.style.cssText = 'position:fixed;top:1.5rem;left:50%;transform:translateX(-50%);background:#2e7d32;color:#fff;padding:0.9rem 2rem;border-radius:8px;font-weight:700;font-size:1rem;z-index:9999;box-shadow:0 4px 16px rgba(0,0,0,0.25);';
-  toast.textContent = '✅ PQRS eliminado correctamente y movido a la papelera.';
+  toast.textContent = '✅ PQRS eliminado y movido a la papelera.';
   document.body.appendChild(toast);
   setTimeout(() => { window.location.href = 'lista-pqrs.html?eliminado=1'; }, 1800);
 }
