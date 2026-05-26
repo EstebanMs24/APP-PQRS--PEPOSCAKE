@@ -57,7 +57,7 @@ async function cargarEstadisticas(db) {
 
   // Gráfico por área
   const porArea = Utils.groupBy(data, 'area_responsable');
-  renderBarChart('chartArea', porArea, total, {
+  Utils.renderBarChart('chartArea', porArea, total, {
     Produccion: 'Producción',
     Envios: 'Envíos',
     Entrega: 'Entrega',
@@ -66,7 +66,7 @@ async function cargarEstadisticas(db) {
 
   // Gráfico por tipo
   const porTipo = Utils.groupBy(data, 'tipo_solicitud');
-  renderBarChart('chartTipo', porTipo, total, {
+  Utils.renderBarChart('chartTipo', porTipo, total, {
     Peticion: 'Petición',
     Queja: 'Queja',
     Reclamo: 'Reclamo',
@@ -109,50 +109,15 @@ async function cargarCasosRecientes(db) {
   `).join('');
 }
 
-// ============================================================
-// UTILIDADES DE DASHBOARD
-// ============================================================
-function renderBarChart(containerId, data, total, labelMap) {
-  const container = document.getElementById(containerId);
-  if (!container) return;
-
-  const sorted = Object.entries(data).sort((a, b) => b[1] - a[1]);
-  const maxVal = sorted.length > 0 ? sorted[0][1] : 1;
-
-  container.innerHTML = sorted.map(([key, count]) => {
-    const pct = maxVal > 0 ? Math.round((count / maxVal) * 100) : 0;
-    const label = (labelMap && labelMap[key]) ? labelMap[key] : key;
-    return `
-      <div class="bar-item">
-        <span class="bar-label">${Utils.escapeHtml(label)}</span>
-        <div class="bar-track">
-          <div class="bar-fill" style="width: ${pct}%">
-            <span class="bar-value">${count}</span>
-          </div>
-        </div>
-        <span class="bar-count">${count}</span>
-      </div>
-    `;
-  }).join('');
-
-  if (sorted.length === 0) {
-    container.innerHTML = '<p class="text-muted text-center">Sin datos</p>';
-  }
-}
-
 function setText(id, value) {
   const el = document.getElementById(id);
   if (el) el.textContent = value;
 }
 
-// ============================================================
-// TREND CHART — últimos 6 meses (SVG inline)
-// ============================================================
 async function cargarTendencia(db) {
   const container = document.getElementById('chartTendencia');
   if (!container) return;
 
-  // Calcular rango: últimos 6 meses completos + el mes actual
   const hoy = new Date();
   const meses = [];
   for (let i = 5; i >= 0; i--) {
@@ -183,61 +148,5 @@ async function cargarTendencia(db) {
     if (mes) mes.total++;
   });
 
-  container.innerHTML = renderTrendSVG(meses);
-}
-
-function renderTrendSVG(meses) {
-  const W = 600, H = 180;
-  const padL = 30, padR = 20, padT = 30, padB = 35;
-  const chartW = W - padL - padR;
-  const chartH = H - padT - padB;
-  const maxVal = Math.max(...meses.map(m => m.total), 1);
-  const n = meses.length;
-
-  // X positions — evenly spaced
-  const xs = meses.map((_, i) => padL + (i / (n - 1)) * chartW);
-  const ys = meses.map(m => padT + chartH - (m.total / maxVal) * chartH);
-
-  // Polyline points
-  const linePoints = xs.map((x, i) => `${x},${ys[i]}`).join(' ');
-
-  // Area path (close polygon below)
-  const areaPath = `M${xs[0]},${padT + chartH} ` +
-    xs.map((x, i) => `L${x},${ys[i]}`).join(' ') +
-    ` L${xs[n - 1]},${padT + chartH} Z`;
-
-  // Grid lines (3 levels)
-  const gridLines = [0.25, 0.5, 0.75, 1].map(frac => {
-    const y = padT + chartH - frac * chartH;
-    const label = Math.round(frac * maxVal);
-    return `<line class="trend-grid-line" x1="${padL}" y1="${y}" x2="${W - padR}" y2="${y}"/>
-            <text x="${padL - 4}" y="${y + 4}" text-anchor="end" class="trend-month-label">${label}</text>`;
-  }).join('');
-
-  // Dots & value labels
-  const dots = meses.map((m, i) => `
-    <circle class="trend-dot" cx="${xs[i]}" cy="${ys[i]}" r="5"/>
-    <text class="trend-dot-label" x="${xs[i]}" y="${ys[i] - 10}" text-anchor="middle">${m.total > 0 ? m.total : ''}</text>
-  `).join('');
-
-  // Month labels
-  const monthLabels = meses.map((m, i) => `
-    <text class="trend-month-label" x="${xs[i]}" y="${H - 4}" text-anchor="middle">${m.label}</text>
-  `).join('');
-
-  return `
-    <svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" style="width:100%; max-width:${W}px;">
-      <defs>
-        <linearGradient id="trendGrad" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stop-color="#4ECDC4" stop-opacity="0.6"/>
-          <stop offset="100%" stop-color="#4ECDC4" stop-opacity="0"/>
-        </linearGradient>
-      </defs>
-      ${gridLines}
-      <path class="trend-area" d="${areaPath}"/>
-      <polyline class="trend-line" points="${linePoints}"/>
-      ${dots}
-      ${monthLabels}
-    </svg>
-  `;
+  container.innerHTML = Utils.renderTrendSVG(meses);
 }

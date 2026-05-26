@@ -130,6 +130,83 @@ const Utils = {
     `;
   },
 
+  renderBarChart(containerId, data, total, labelMap) {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+
+    const sorted = Object.entries(data).sort((a, b) => b[1] - a[1]);
+    const maxVal = sorted.length > 0 ? sorted[0][1] : 1;
+
+    container.innerHTML = sorted.map(([key, count]) => {
+      const pct = maxVal > 0 ? Math.round((count / maxVal) * 100) : 0;
+      const label = (labelMap && labelMap[key]) ? labelMap[key] : key;
+      return `
+        <div class="bar-item">
+          <span class="bar-label">${this.escapeHtml(label)}</span>
+          <div class="bar-track">
+            <div class="bar-fill" style="width: ${pct}%">
+              <span class="bar-value">${count}</span>
+            </div>
+          </div>
+          <span class="bar-count">${count}</span>
+        </div>
+      `;
+    }).join('');
+
+    if (sorted.length === 0) {
+      container.innerHTML = '<p class="text-muted text-center">Sin datos</p>';
+    }
+  },
+
+  renderTrendSVG(meses) {
+    const W = 600, H = 180;
+    const padL = 30, padR = 20, padT = 30, padB = 35;
+    const chartW = W - padL - padR;
+    const chartH = H - padT - padB;
+    const maxVal = Math.max(...meses.map(m => m.total), 1);
+    const n = meses.length;
+
+    const xs = meses.map((_, i) => padL + (i / (n - 1)) * chartW);
+    const ys = meses.map(m => padT + chartH - (m.total / maxVal) * chartH);
+
+    const linePoints = xs.map((x, i) => `${x},${ys[i]}`).join(' ');
+    const areaPath = `M${xs[0]},${padT + chartH} ` +
+      xs.map((x, i) => `L${x},${ys[i]}`).join(' ') +
+      ` L${xs[n - 1]},${padT + chartH} Z`;
+
+    const gridLines = [0.25, 0.5, 0.75, 1].map(frac => {
+      const y = padT + chartH - frac * chartH;
+      const label = Math.round(frac * maxVal);
+      return `<line class="trend-grid-line" x1="${padL}" y1="${y}" x2="${W - padR}" y2="${y}"/>
+              <text x="${padL - 4}" y="${y + 4}" text-anchor="end" class="trend-month-label">${label}</text>`;
+    }).join('');
+
+    const dots = meses.map((m, i) => `
+      <circle class="trend-dot" cx="${xs[i]}" cy="${ys[i]}" r="5"/>
+      <text class="trend-dot-label" x="${xs[i]}" y="${ys[i] - 10}" text-anchor="middle">${m.total > 0 ? m.total : ''}</text>
+    `).join('');
+
+    const monthLabels = meses.map((m, i) => `
+      <text class="trend-month-label" x="${xs[i]}" y="${H - 4}" text-anchor="middle">${m.label}</text>
+    `).join('');
+
+    return `
+      <svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" style="width:100%; max-width:${W}px;">
+        <defs>
+          <linearGradient id="trendGrad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#4ECDC4" stop-opacity="0.6"/>
+            <stop offset="100%" stop-color="#4ECDC4" stop-opacity="0"/>
+          </linearGradient>
+        </defs>
+        ${gridLines}
+        <path class="trend-area" d="${areaPath}"/>
+        <polyline class="trend-line" points="${linePoints}"/>
+        ${dots}
+        ${monthLabels}
+      </svg>
+    `;
+  },
+
   // Utilidades
   generarNumeroCaso() {
     const hoy = new Date();
