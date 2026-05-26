@@ -290,8 +290,6 @@ img { max-width: 100%; }
   overflow-y: auto;
   z-index: 100;
   transition: transform var(--ease);
-  position: relative;
-  overflow: hidden;
 }
 
 /* Textura sutil en el sidebar */
