@@ -138,8 +138,7 @@ CREATE POLICY "Solo admin puede cambiar roles" ON usuarios
 
 -- Política: consulta pública por número de caso (lectura pública limitada)
 CREATE POLICY "Consulta pública por número de caso" ON pqrs
-  FOR SELECT USING (true)
-  WITH CHECK (false);
+  FOR SELECT USING (true);
 
 -- ============================================================
 -- DATOS INICIALES DE PRUEBA

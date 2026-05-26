@@ -4,8 +4,8 @@
 // Panel Supabase → Settings → API
 // ============================================================
 
-const SUPABASE_URL = 'https://paskcxvaonsztsbqtesr.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBhc2tjeHZhb25zenRzYnF0ZXJyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI5MjkyNjksImV4cCI6MjA4ODUwNTI2OX0.-P3MYkZYmBmRS99m4wudYWmbR3greMcno4j0H4qJOeg';
+const SUPABASE_URL = 'https://kxxnyhyliqvqfnrlkaxd.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt4eG55aHlsaXF2cWZucmxrYXhkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk3NTE5ODQsImV4cCI6MjA5NTMyNzk4NH0.u6QMRLYx0M-Ruuybem2rJjFArSaacIEqkKIP5aLJ7cI';
 
 // Carga la librería de Supabase desde CDN (cargada en el HTML si no existe)
 (function loadSupabase() {
