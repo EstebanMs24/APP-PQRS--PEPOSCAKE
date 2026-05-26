@@ -32,7 +32,7 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('btnExportExcel').addEventListener('click', async () => {
       const desde = document.getElementById('reporteDesde').value || null;
       const hasta = document.getElementById('reporteHasta').value || null;
-      let query = db.from('pqrs').select('*').neq('eliminado', true).order('fecha_registro', { ascending: false });
+      let query = db.from('pqrs').select('*').or('eliminado.is.null,eliminado.eq.false').order('fecha_registro', { ascending: false });
       if (desde) query = query.gte('fecha_registro', desde + 'T00:00:00');
       if (hasta) query = query.lte('fecha_registro', hasta + 'T23:59:59');
       const { data } = await query;
@@ -50,7 +50,7 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 async function generarReporte(db, desde, hasta) {
-  let query = db.from('pqrs').select('*').neq('eliminado', true);
+  let query = db.from('pqrs').select('*').or('eliminado.is.null,eliminado.eq.false');
   if (desde) query = query.gte('fecha_registro', desde + 'T00:00:00');
   if (hasta) query = query.lte('fecha_registro', hasta + 'T23:59:59');
 

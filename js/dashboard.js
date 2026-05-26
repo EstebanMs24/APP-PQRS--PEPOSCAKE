@@ -37,14 +37,14 @@ async function cargarEstadisticas(db) {
   setText('statProceso', proceso);
   setText('statResuelto', resuelto);
 
-  // SLA Vencido: activos cuyo plazo ha expirado
-  const SLA_DIAS = { Peticion: 15, Queja: 10, Reclamo: 15, Sugerencia: 30 };
-  const hoy = Date.now();
+  // SLA Vencido: activos cuyo plazo de horas ha expirado
+  const ahora = Date.now();
   const slaVencidos = data.filter(d => {
     if (d.estado === 'Resuelto') return false;
-    const limite = SLA_DIAS[d.tipo_solicitud] || 15;
-    const dias = (hoy - new Date(d.fecha_registro).getTime()) / 86400000;
-    return dias > limite;
+    const horas = CONFIG.SLA_HORAS[d.tipo_solicitud] || 120;
+    const msTranscurridos = ahora - new Date(d.fecha_registro).getTime();
+    const horasTranscurridas = msTranscurridos / 3600000;
+    return horasTranscurridas > horas;
   }).length;
   setText('statSlaVencido', slaVencidos);
 
@@ -56,7 +56,7 @@ async function cargarEstadisticas(db) {
   setText('statEliminado', errCount ? '?' : (countEliminados ?? 0));
 
   // Gráfico por área
-  const porArea = groupBy(data, 'area_responsable');
+  const porArea = Utils.groupBy(data, 'area_responsable');
   renderBarChart('chartArea', porArea, total, {
     Produccion: 'Producción',
     Envios: 'Envíos',
@@ -65,7 +65,7 @@ async function cargarEstadisticas(db) {
   });
 
   // Gráfico por tipo
-  const porTipo = groupBy(data, 'tipo_solicitud');
+  const porTipo = Utils.groupBy(data, 'tipo_solicitud');
   renderBarChart('chartTipo', porTipo, total, {
     Peticion: 'Petición',
     Queja: 'Queja',
@@ -97,11 +97,11 @@ async function cargarCasosRecientes(db) {
   tbody.innerHTML = data.map(row => `
     <tr>
       <td><strong>${row.numero_caso}</strong></td>
-      <td>${escapeHtml(row.nombre_cliente)}</td>
-      <td>${badgeTipo(row.tipo_solicitud)}</td>
-      <td>${labelArea(row.area_responsable)}</td>
-      <td>${badgeEstado(row.estado)}</td>
-      <td>${formatFecha(row.fecha_registro)}</td>
+      <td>${Utils.escapeHtml(row.nombre_cliente)}</td>
+      <td>${Utils.badgeTipo(row.tipo_solicitud)}</td>
+      <td>${Utils.labelArea(row.area_responsable)}</td>
+      <td>${Utils.badgeEstado(row.estado)}</td>
+      <td>${Utils.formatFecha(row.fecha_registro)}</td>
       <td>
         <a href="detalle-pqrs.html?id=${row.id}" class="btn btn-outline btn-sm">Ver</a>
       </td>
@@ -112,14 +112,6 @@ async function cargarCasosRecientes(db) {
 // ============================================================
 // UTILIDADES DE DASHBOARD
 // ============================================================
-function groupBy(arr, key) {
-  return arr.reduce((acc, item) => {
-    const val = item[key] || 'Sin clasificar';
-    acc[val] = (acc[val] || 0) + 1;
-    return acc;
-  }, {});
-}
-
 function renderBarChart(containerId, data, total, labelMap) {
   const container = document.getElementById(containerId);
   if (!container) return;
@@ -132,7 +124,7 @@ function renderBarChart(containerId, data, total, labelMap) {
     const label = (labelMap && labelMap[key]) ? labelMap[key] : key;
     return `
       <div class="bar-item">
-        <span class="bar-label">${escapeHtml(label)}</span>
+        <span class="bar-label">${Utils.escapeHtml(label)}</span>
         <div class="bar-track">
           <div class="bar-fill" style="width: ${pct}%">
             <span class="bar-value">${count}</span>
@@ -151,15 +143,6 @@ function renderBarChart(containerId, data, total, labelMap) {
 function setText(id, value) {
   const el = document.getElementById(id);
   if (el) el.textContent = value;
-}
-
-function escapeHtml(str) {
-  if (!str) return '—';
-  return String(str)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;');
 }
 
 // ============================================================

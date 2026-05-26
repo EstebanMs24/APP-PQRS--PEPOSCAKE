@@ -1,12 +1,11 @@
 // ============================================================
 // SUPABASE CLIENT - Pepo's Cake PQRS
-// Reemplaza las variables con tus credenciales de Supabase
+// ⚠️  IMPORTANTE: Reemplaza estas variables con tus credenciales
+// Panel Supabase → Settings → API
 // ============================================================
 
-// ⚠️  IMPORTANTE: Reemplaza estos valores con los de tu proyecto Supabase
-// Panel Supabase → Settings → API
 const SUPABASE_URL = 'https://paskcxvaonsztsbqtesr.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBhc2tjeHZhb25zenRzYnF0ZXNyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI5MjkyNjksImV4cCI6MjA4ODUwNTI2OX0.-P3MYkZYmBmRS99m4wudYWmbR3greMcno4j0H4qJOeg';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBhc2tjeHZhb25zenRzYnF0ZXJyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI5MjkyNjksImV4cCI6MjA4ODUwNTI2OX0.-P3MYkZYmBmRS99m4wudYWmbR3greMcno4j0H4qJOeg';
 
 // Carga la librería de Supabase desde CDN (cargada en el HTML si no existe)
 (function loadSupabase() {

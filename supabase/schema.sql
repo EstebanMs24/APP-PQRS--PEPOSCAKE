@@ -5,10 +5,10 @@
 
 -- Tabla de usuarios del sistema (personal de la empresa)
 CREATE TABLE usuarios (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
   nombre VARCHAR(150) NOT NULL,
   correo VARCHAR(200) UNIQUE NOT NULL,
-  rol VARCHAR(50) NOT NULL DEFAULT 'agente' CHECK (rol IN ('admin', 'agente', 'supervisor')),
+  rol VARCHAR(50) NOT NULL DEFAULT 'empleado' CHECK (rol IN ('cliente', 'empleado', 'admin')),
   area VARCHAR(100),
   activo BOOLEAN DEFAULT TRUE,
   creado_en TIMESTAMP WITH TIME ZONE DEFAULT NOW()
@@ -52,20 +52,25 @@ CREATE TABLE seguimiento_pqrs (
 
 -- ============================================================
 -- FUNCIÓN: Generar número de caso automático
--- Formato: PQR-YYYYMMDD-XXXX (ej: PQR-20260307-0001)
+-- Formato: PC-YYYY-NNNNN (ej: PC-2026-00042)
+-- Nota: Usa secuencias (nextval) para evitar colisiones bajo concurrencia
 -- ============================================================
+
+-- Crear secuencia atómica para garantizar unicidad bajo inserts simultáneos
+CREATE SEQUENCE IF NOT EXISTS pqrs_consecutivo_seq START 1 INCREMENT 1;
+
 CREATE OR REPLACE FUNCTION generar_numero_caso()
 RETURNS TRIGGER AS $$
 DECLARE
-  fecha_hoy TEXT;
-  consecutivo INT;
+  año TEXT;
+  consecutivo BIGINT;
   numero TEXT;
 BEGIN
-  fecha_hoy := TO_CHAR(NOW(), 'YYYYMMDD');
-  SELECT COUNT(*) + 1 INTO consecutivo
-  FROM pqrs
-  WHERE numero_caso LIKE 'PQR-' || fecha_hoy || '-%';
-  numero := 'PQR-' || fecha_hoy || '-' || LPAD(consecutivo::TEXT, 4, '0');
+  año := TO_CHAR(NOW(), 'YYYY');
+  -- nextval() es atómico en PostgreSQL: seguro bajo concurrencia
+  consecutivo := nextval('pqrs_consecutivo_seq');
+  -- Usar módulo para mantener el número dentro de 5 dígitos (00000-99999)
+  numero := 'PC-' || año || '-' || LPAD((consecutivo % 100000)::TEXT, 5, '0');
   NEW.numero_caso := numero;
   RETURN NEW;
 END;
@@ -124,6 +129,18 @@ CREATE POLICY "Insertar seguimiento autenticado" ON seguimiento_pqrs
 CREATE POLICY "Leer usuarios autenticado" ON usuarios
   FOR SELECT USING (auth.role() = 'authenticated');
 
+-- Política: solo admin puede cambiar roles
+CREATE POLICY "Solo admin puede cambiar roles" ON usuarios
+  FOR UPDATE USING (
+    auth.role() = 'authenticated' AND
+    (SELECT rol FROM usuarios WHERE id = auth.uid()) = 'admin'
+  );
+
+-- Política: consulta pública por número de caso (lectura pública limitada)
+CREATE POLICY "Consulta pública por número de caso" ON pqrs
+  FOR SELECT USING (true)
+  WITH CHECK (false);
+
 -- ============================================================
 -- DATOS INICIALES DE PRUEBA
 -- ============================================================
@@ -137,6 +154,14 @@ CREATE POLICY "Leer usuarios autenticado" ON usuarios
 -- ============================================================
 -- NUEVAS COLUMNAS (ejecutar en Supabase SQL Editor si la tabla ya existe)
 -- ============================================================
+
+-- Soft delete: columnas para papelera de reciclaje
+ALTER TABLE pqrs ADD COLUMN IF NOT EXISTS eliminado      BOOLEAN DEFAULT FALSE;
+ALTER TABLE pqrs ADD COLUMN IF NOT EXISTS eliminado_en   TIMESTAMP WITH TIME ZONE;
+ALTER TABLE pqrs ADD COLUMN IF NOT EXISTS eliminado_por  VARCHAR(200);
+
+-- Índice para mejorar performance del filtro de eliminados
+CREATE INDEX IF NOT EXISTS idx_pqrs_eliminado ON pqrs(eliminado);
 
 -- Etiquetas personalizables por caso
 ALTER TABLE pqrs ADD COLUMN IF NOT EXISTS tags TEXT[] DEFAULT '{}';

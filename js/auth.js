@@ -1,108 +1,61 @@
 // ============================================================
-// AUTH.JS - Manejo de autenticación y sesión
+// AUTH.JS - Autenticación, sesión y control de acceso
 // ============================================================
 
-// Páginas que REQUIEREN autenticación (el resto es público por defecto)
+// Páginas protegidas que requieren autenticación
 const PROTECTED_PAGES = ['dashboard', 'nuevo-pqrs', 'lista-pqrs', 'detalle-pqrs', 'reportes'];
 
-// Inicializa auth en cada página
+// Inicializar auth
 document.addEventListener('DOMContentLoaded', () => {
   withSupabase(async (db) => {
-    const path = window.location.pathname;
-    // Extrae el nombre de página sin importar si tiene .html o no
-    // Ej: '/registro.html' → 'registro', '/dashboard' → 'dashboard', '/' → 'index'
-    const segment = (path.split('/').pop() || '').replace('.html', '') || 'index';
+    const pagina = extraerNombrePagina();
+    const esRegistro = pagina === 'registro';
+    const esLogin = pagina === 'index';
+    const esProtegida = PROTECTED_PAGES.includes(pagina);
 
-    const isRegistroPage = segment === 'registro';
-    const isLoginPage    = segment === 'index' || path === '/' || path === '';
-    const isProtected    = PROTECTED_PAGES.includes(segment);
-
-    // En la página de registro: si hay sesión activa, redirigir al dashboard
-    if (isRegistroPage) {
-      const { data: { session: existingSession } } = await db.auth.getSession();
-      if (existingSession) {
-        window.location.href = 'dashboard.html';
-      }
+    // En registro: si hay sesión, ir a dashboard
+    if (esRegistro) {
+      const { data: { session } } = await db.auth.getSession();
+      if (session) window.location.href = 'dashboard.html';
       return;
     }
 
     const { data: { session } } = await db.auth.getSession();
 
-    // Página protegida sin sesión → ir al login
-    if (isProtected && !session) {
+    // Página protegida sin sesión → login
+    if (esProtegida && !session) {
       window.location.href = 'index.html';
       return;
     }
-    // Página de login con sesión activa → ir al dashboard
-    if (isLoginPage && session) {
+
+    // Login con sesión → dashboard
+    if (esLogin && session) {
       window.location.href = 'dashboard.html';
       return;
     }
 
-    // Si hay sesión, poblar datos de usuario en el sidebar
+    // Cargar datos de usuario si hay sesión
     if (session) {
-      const email = session.user.email || '';
-      const nombreEl = document.getElementById('userName');
-      const rolEl = document.getElementById('userRole');
-      if (nombreEl) nombreEl.textContent = email.split('@')[0];
-      if (rolEl) rolEl.textContent = 'Agente';
-
-      // Cargar datos adicionales del perfil
-      const { data: perfil } = await db
-        .from('usuarios')
-        .select('nombre, rol')
-        .eq('id', session.user.id)
-        .single();
-      if (perfil) {
-        if (nombreEl) nombreEl.textContent = perfil.nombre;
-        if (rolEl) rolEl.textContent = capitalize(perfil.rol);
-      }
+      await cargarDatosUsuario(db, session.user.id);
+      updateRoleBasedElements();
     }
 
-    // Inicializar sidebar móvil y modo oscuro
+    // Inicializar componentes
     initSidebar();
     initDarkMode();
   });
 
-  // Formulario de login
-  const loginForm = document.getElementById('loginForm');
-  if (loginForm) {
-    loginForm.addEventListener('submit', handleLogin);
-  }
-
-  // Formulario de registro
-  const registroForm = document.getElementById('registroForm');
-  if (registroForm) {
-    registroForm.addEventListener('submit', handleRegistro);
-  }
-
-  // Botón de logout
-  const logoutBtn = document.getElementById('logoutBtn');
-  if (logoutBtn) {
-    logoutBtn.addEventListener('click', handleLogout);
-  }
-
-  // Toggle password
-  const togglePassword = document.getElementById('togglePassword');
-  if (togglePassword) {
-    togglePassword.addEventListener('click', () => {
-      const pwd = document.getElementById('password');
-      pwd.type = pwd.type === 'password' ? 'text' : 'password';
-      togglePassword.textContent = pwd.type === 'password' ? '👁️' : '🙈';
-    });
-  }
-
-  // Toggle password confirm (en página de registro)
-  const togglePasswordConfirm = document.getElementById('togglePasswordConfirm');
-  if (togglePasswordConfirm) {
-    togglePasswordConfirm.addEventListener('click', () => {
-      const pwd = document.getElementById('passwordConfirm');
-      pwd.type = pwd.type === 'password' ? 'text' : 'password';
-      togglePasswordConfirm.textContent = pwd.type === 'password' ? '👁️' : '🙈';
-    });
-  }
+  // Event listeners
+  document.getElementById('loginForm')?.addEventListener('submit', handleLogin);
+  document.getElementById('registroForm')?.addEventListener('submit', handleRegistro);
+  document.getElementById('logoutBtn')?.addEventListener('click', handleLogout);
+  document.getElementById('togglePassword')?.addEventListener('click', togglePasswordVisibility);
+  document.getElementById('togglePasswordConfirm')?.addEventListener('click', togglePasswordConfirmVisibility);
 });
 
+// ============================================================
+// Autenticación
+// ============================================================
 async function handleLogin(e) {
   e.preventDefault();
   const btn = document.getElementById('loginBtn');
@@ -110,31 +63,25 @@ async function handleLogin(e) {
   const email = document.getElementById('email').value.trim();
   const password = document.getElementById('password').value;
 
+  if (!email || !password) {
+    mostrarError(errorEl, 'Por favor completa todos los campos.');
+    return;
+  }
+
   setLoading(btn, true);
   errorEl.style.display = 'none';
 
   withSupabase(async (db) => {
     const { error } = await db.auth.signInWithPassword({ email, password });
     if (error) {
-      const esEmailNoConfirmado = error.message && (
-        error.message.toLowerCase().includes('email not confirmed') ||
-        error.message.toLowerCase().includes('invalid login') && error.status === 400
-      );
-      errorEl.textContent = esEmailNoConfirmado
-        ? 'Debes confirmar tu correo antes de iniciar sesión. Revisa tu bandeja de entrada (o spam).'
-        : 'Correo o contraseña incorrectos. Verifica tus credenciales.';
-      errorEl.style.display = 'block';
+      const mensaje = error.message?.toLowerCase().includes('invalid')
+        ? 'Correo o contraseña incorrectos.'
+        : error.message || 'Error al iniciar sesión.';
+      mostrarError(errorEl, mensaje);
       setLoading(btn, false);
       return;
     }
-    window.location.href = 'dashboard.html';
-  });
-}
-
-async function handleLogout() {
-  withSupabase(async (db) => {
-    await db.auth.signOut();
-    window.location.href = 'index.html';
+    setTimeout(() => window.location.href = 'dashboard.html', 500);
   });
 }
 
@@ -147,27 +94,28 @@ async function handleRegistro(e) {
   const email = document.getElementById('email').value.trim();
   const password = document.getElementById('password').value;
   const passwordConfirm = document.getElementById('passwordConfirm').value;
-  const rol = document.getElementById('rol').value;
 
   errorEl.style.display = 'none';
   successEl.style.display = 'none';
 
   // Validaciones
+  if (!nombre || !email || !password || !passwordConfirm) {
+    mostrarError(errorEl, 'Por favor completa todos los campos.');
+    return;
+  }
+
   if (password !== passwordConfirm) {
-    errorEl.textContent = 'Las contraseñas no coinciden.';
-    errorEl.style.display = 'block';
+    mostrarError(errorEl, 'Las contraseñas no coinciden.');
     return;
   }
 
   if (password.length < 6) {
-    errorEl.textContent = 'La contraseña debe tener al menos 6 caracteres.';
-    errorEl.style.display = 'block';
+    mostrarError(errorEl, 'La contraseña debe tener al menos 6 caracteres.');
     return;
   }
 
-  if (!rol) {
-    errorEl.textContent = 'Por favor selecciona un rol.';
-    errorEl.style.display = 'block';
+  if (!email.includes('@')) {
+    mostrarError(errorEl, 'Por favor ingresa un correo válido.');
     return;
   }
 
@@ -178,62 +126,101 @@ async function handleRegistro(e) {
     const { data: authData, error: authError } = await db.auth.signUp({
       email,
       password,
-      options: {
-        data: {
-          nombre: nombre
-        }
-      }
+      options: { data: { nombre } }
     });
 
     if (authError) {
-      errorEl.textContent = authError.message === 'User already registered' 
-        ? 'Este correo ya está registrado.' 
-        : 'Error al crear la cuenta: ' + authError.message;
-      errorEl.style.display = 'block';
+      const msg = authError.message?.includes('already registered')
+        ? 'Este correo ya está registrado.'
+        : authError.message || 'Error al registrar.';
+      mostrarError(errorEl, msg);
       setLoading(btn, false);
       return;
     }
 
-    // Insertar en tabla de usuarios
+    // Insertar en tabla usuarios con rol 'empleado' por defecto
     const { error: dbError } = await db
       .from('usuarios')
       .insert({
         id: authData.user.id,
         correo: email,
         nombre: nombre,
-        rol: rol
+        rol: 'empleado'
       });
 
     if (dbError) {
-      console.error('Error al guardar perfil:', dbError);
-      errorEl.textContent = 'Cuenta creada pero hubo un error al guardar el perfil.';
-      errorEl.style.display = 'block';
+      mostrarError(errorEl, 'Error al guardar perfil. Contacta soporte.');
       setLoading(btn, false);
       return;
     }
 
     // Éxito
     if (authData.session) {
-      // Sin confirmación de email: sesión activa, ir al dashboard
-      successEl.textContent = '¡Cuenta creada exitosamente! Redirigiendo al panel...';
-      successEl.style.display = 'block';
-      setTimeout(() => {
-        window.location.href = 'dashboard.html';
-      }, 2000);
+      mostrarExito(successEl, '¡Bienvenido a Pepo\'s Cake! Redirigiendo...');
+      setTimeout(() => window.location.href = 'dashboard.html', 2000);
     } else {
-      // Con confirmación de email: aún no hay sesión activa
-      successEl.textContent = '¡Cuenta creada! Revisa tu correo y confirma tu cuenta, luego inicia sesión.';
-      successEl.style.display = 'block';
+      mostrarExito(successEl, 'Cuenta creada. Confirma tu correo e inicia sesión.');
       setLoading(btn, false);
-      setTimeout(() => {
-        window.location.href = 'index.html';
-      }, 4000);
+      setTimeout(() => window.location.href = 'index.html', 3000);
     }
   });
 }
 
+async function handleLogout() {
+  withSupabase(async (db) => {
+    await db.auth.signOut();
+    localStorage.removeItem(CONFIG.STORAGE_KEYS.USUARIO);
+    window.location.href = 'index.html';
+  });
+}
+
 // ============================================================
-// SIDEBAR MÓVIL
+// Usuario
+// ============================================================
+async function cargarDatosUsuario(db, userId) {
+  const { data: perfil } = await db
+    .from('usuarios')
+    .select('id, nombre, rol, correo')
+    .eq('id', userId)
+    .single();
+
+  if (perfil) {
+    window.currentUser = perfil;
+    window.currentUserRol = perfil.rol;
+    localStorage.setItem(CONFIG.STORAGE_KEYS.USUARIO, JSON.stringify(perfil));
+
+    const nombreEl = document.getElementById('userName');
+    const rolEl = document.getElementById('userRole');
+    if (nombreEl) nombreEl.textContent = perfil.nombre || 'Usuario';
+    if (rolEl) rolEl.textContent = getLabelRol(perfil.rol);
+  }
+}
+
+function getCurrentUser() {
+  const stored = localStorage.getItem(CONFIG.STORAGE_KEYS.USUARIO);
+  return stored ? JSON.parse(stored) : null;
+}
+
+function getLabelRol(rol) {
+  const map = {
+    'cliente': 'Cliente',
+    'empleado': 'Empleado',
+    'admin': 'Administrador'
+  };
+  return map[rol] || 'Usuario';
+}
+
+function tieneRol(rolRequerido) {
+  return window.currentUserRol === rolRequerido;
+}
+
+function puedeAcceder(permisoRequerido) {
+  const rol = window.currentUserRol;
+  return tienePermiso(rol, permisoRequerido);
+}
+
+// ============================================================
+// Sidebar
 // ============================================================
 function initSidebar() {
   const sidebar = document.getElementById('sidebar');
@@ -243,25 +230,74 @@ function initSidebar() {
 
   if (!sidebar) return;
 
-  function openSidebar() {
+  function abrirSidebar() {
     sidebar.classList.add('open');
-    overlay.classList.add('visible');
+    overlay?.classList.add('visible');
     document.body.style.overflow = 'hidden';
   }
-  function closeSidebar() {
+
+  function cerrarSidebar() {
     sidebar.classList.remove('open');
-    overlay.classList.remove('visible');
+    overlay?.classList.remove('visible');
     document.body.style.overflow = '';
   }
 
-  if (menuToggle) menuToggle.addEventListener('click', openSidebar);
-  if (sidebarClose) sidebarClose.addEventListener('click', closeSidebar);
-  if (overlay) overlay.addEventListener('click', closeSidebar);
+  menuToggle?.addEventListener('click', abrirSidebar);
+  sidebarClose?.addEventListener('click', cerrarSidebar);
+  overlay?.addEventListener('click', cerrarSidebar);
+
+  // Cerrar al hacer click en un enlace
+  sidebar.querySelectorAll('a').forEach(link => {
+    link.addEventListener('click', cerrarSidebar);
+  });
 }
 
 // ============================================================
-// UTILIDADES
+// Dark Mode
 // ============================================================
+function initDarkMode() {
+  const tema = localStorage.getItem(CONFIG.STORAGE_KEYS.TEMA) || 'light';
+  if (tema === 'dark') {
+    document.documentElement.setAttribute('data-theme', 'dark');
+  }
+
+  const topbarActions = document.querySelector('.topbar-actions');
+  if (!topbarActions) return;
+
+  const btn = document.createElement('button');
+  btn.id = 'darkToggle';
+  btn.className = 'btn-dark-toggle';
+  btn.title = 'Alternar modo oscuro';
+  btn.type = 'button';
+  btn.innerHTML = tema === 'dark'
+    ? '<i class="bi bi-sun-fill"></i>'
+    : '<i class="bi bi-moon-fill"></i>';
+
+  btn.addEventListener('click', (e) => {
+    e.preventDefault();
+    const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+    if (isDark) {
+      document.documentElement.removeAttribute('data-theme');
+      localStorage.setItem(CONFIG.STORAGE_KEYS.TEMA, 'light');
+      btn.innerHTML = '<i class="bi bi-moon-fill"></i>';
+    } else {
+      document.documentElement.setAttribute('data-theme', 'dark');
+      localStorage.setItem(CONFIG.STORAGE_KEYS.TEMA, 'dark');
+      btn.innerHTML = '<i class="bi bi-sun-fill"></i>';
+    }
+  });
+
+  topbarActions.insertBefore(btn, topbarActions.firstChild);
+}
+
+// ============================================================
+// Utilidades
+// ============================================================
+function extraerNombrePagina() {
+  const path = window.location.pathname;
+  return (path.split('/').pop() || '').replace('.html', '') || 'index';
+}
+
 function setLoading(btn, loading) {
   if (!btn) return;
   const text = btn.querySelector('.btn-text');
@@ -271,106 +307,45 @@ function setLoading(btn, loading) {
   if (loader) loader.style.display = loading ? 'inline' : 'none';
 }
 
-function capitalize(str) {
-  if (!str) return '';
-  return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
-}
-
-function formatFecha(isoString) {
-  if (!isoString) return '—';
-  const d = new Date(isoString);
-  return d.toLocaleDateString('es-CO', {
-    day: '2-digit', month: '2-digit', year: 'numeric',
-    hour: '2-digit', minute: '2-digit'
-  });
-}
-
-function labelArea(area) {
-  const map = {
-    Produccion: 'Producción',
-    Envios: 'Envíos',
-    Entrega: 'Entrega',
-    Atencion_cliente: 'Atención al Cliente'
-  };
-  return map[area] || area;
-}
-
-function labelTipo(tipo) {
-  const map = {
-    Peticion: 'Petición',
-    Queja: 'Queja',
-    Reclamo: 'Reclamo',
-    Sugerencia: 'Sugerencia'
-  };
-  return map[tipo] || tipo;
-}
-
-function labelEstado(estado) {
-  const map = {
-    Pendiente: 'Pendiente',
-    En_proceso: 'En Proceso',
-    Resuelto: 'Resuelto'
-  };
-  return map[estado] || estado;
-}
-
-function badgeEstado(estado) {
-  return `<span class="badge badge-${estado}">${labelEstado(estado)}</span>`;
-}
-
-function badgeTipo(tipo) {
-  return `<span class="badge badge-${tipo}">${labelTipo(tipo)}</span>`;
-}
-
-function getCurrentUser() {
-  return new Promise((resolve) => {
-    withSupabase(async (db) => {
-      const { data: { session } } = await db.auth.getSession();
-      resolve(session ? session.user : null);
-    });
-  });
-}
-
-function showAlert(elementId, type, message) {
-  const el = document.getElementById(elementId);
+function mostrarError(el, msg) {
   if (!el) return;
-  el.className = `alert alert-${type}`;
-  el.textContent = message;
+  el.textContent = '❌ ' + msg;
   el.style.display = 'block';
-  setTimeout(() => { el.style.display = 'none'; }, 5000);
 }
 
-// ============================================================
-// DARK MODE
-// ============================================================
-function initDarkMode() {
-  const saved = localStorage.getItem('darkMode');
-  if (saved === 'dark') {
-    document.documentElement.setAttribute('data-theme', 'dark');
-  }
+function mostrarExito(el, msg) {
+  if (!el) return;
+  el.textContent = '✅ ' + msg;
+  el.style.display = 'block';
+}
 
-  // Inject toggle button into topbar-actions
-  const actions = document.querySelector('.topbar-actions');
-  if (!actions) return;
+function togglePasswordVisibility() {
+  const pwd = document.getElementById('password');
+  if (!pwd) return;
+  pwd.type = pwd.type === 'password' ? 'text' : 'password';
+  const btn = document.getElementById('togglePassword');
+  if (btn) btn.innerHTML = pwd.type === 'password'
+    ? '<i class="bi bi-eye-fill"></i>'
+    : '<i class="bi bi-eye-slash-fill"></i>';
+}
 
-  const btn = document.createElement('button');
-  btn.id = 'darkToggle';
-  btn.className = 'btn-dark-toggle';
-  btn.title = 'Cambiar modo oscuro / claro';
-  btn.textContent = document.documentElement.getAttribute('data-theme') === 'dark' ? '☀️' : '🌙';
+function togglePasswordConfirmVisibility() {
+  const pwd = document.getElementById('passwordConfirm');
+  if (!pwd) return;
+  pwd.type = pwd.type === 'password' ? 'text' : 'password';
+  const btn = document.getElementById('togglePasswordConfirm');
+  if (btn) btn.innerHTML = pwd.type === 'password'
+    ? '<i class="bi bi-eye-fill"></i>'
+    : '<i class="bi bi-eye-slash-fill"></i>';
+}
 
-  btn.addEventListener('click', () => {
-    const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
-    if (isDark) {
-      document.documentElement.removeAttribute('data-theme');
-      localStorage.setItem('darkMode', 'light');
-      btn.textContent = '🌙';
-    } else {
-      document.documentElement.setAttribute('data-theme', 'dark');
-      localStorage.setItem('darkMode', 'dark');
-      btn.textContent = '☀️';
-    }
+function updateRoleBasedElements() {
+  const rol = window.currentUserRol || 'cliente';
+  document.querySelectorAll('[data-rol-minimo]').forEach((el) => {
+    const requiredRol = el.getAttribute('data-rol-minimo');
+    const puedeVer = rol === requiredRol ||
+      (requiredRol === 'empleado' && rol === 'admin') ||
+      rol === 'admin';
+    el.style.display = puedeVer ? '' : 'none';
   });
-
-  actions.insertBefore(btn, actions.firstChild);
 }

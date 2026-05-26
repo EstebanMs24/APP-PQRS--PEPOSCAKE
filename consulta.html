@@ -1,151 +1,14 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Consultar PQRS — Pepo's Cake</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet" />
+  <title>Consultar PQRS â€” Pepo's Cake</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
-  <link rel="stylesheet" href="css/styles.css?v=3" />
-  <style>
-    .consulta-wrap {
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      padding: 1.5rem;
-      background: var(--bg);
-    }
-    .consulta-card {
-      background: var(--surface);
-      border-radius: 18px;
-      box-shadow: var(--sh-lg);
-      padding: 2.5rem 2rem;
-      width: 100%;
-      max-width: 520px;
-    }
-    .consulta-logo {
-      display: flex;
-      justify-content: center;
-      margin-bottom: 1.5rem;
-    }
-    .consulta-logo img {
-      height: 64px;
-    }
-    .consulta-title {
-      text-align: center;
-      font-size: 1.4rem;
-      font-weight: 800;
-      color: var(--text);
-      margin-bottom: 0.25rem;
-    }
-    .consulta-subtitle {
-      text-align: center;
-      color: var(--text-muted);
-      font-size: 0.9rem;
-      margin-bottom: 1.75rem;
-    }
-    .consulta-form {
-      display: flex;
-      gap: 0.5rem;
-    }
-    .consulta-form input {
-      flex: 1;
-      padding: 0.65rem 1rem;
-      border-radius: 10px;
-      border: 1.5px solid var(--border);
-      background: var(--bg);
-      color: var(--text);
-      font-size: 0.95rem;
-      font-family: var(--font);
-      outline: none;
-      transition: border-color 0.2s;
-    }
-    .consulta-form input:focus {
-      border-color: var(--primary);
-    }
-    .consulta-form button {
-      flex-shrink: 0;
-    }
-    .result-box {
-      display: none;
-      margin-top: 1.5rem;
-      border-radius: 12px;
-      border: 1.5px solid var(--border);
-      overflow: hidden;
-    }
-    .result-box.visible { display: block; }
-    .result-header {
-      background: var(--primary);
-      color: #fff;
-      padding: 0.85rem 1.2rem;
-      font-weight: 700;
-      font-size: 1rem;
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-    }
-    .result-body {
-      padding: 1.2rem;
-      display: flex;
-      flex-direction: column;
-      gap: 0.75rem;
-    }
-    .result-row {
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-start;
-      font-size: 0.9rem;
-      gap: 0.5rem;
-    }
-    .result-label {
-      color: var(--text-muted);
-      font-weight: 600;
-      min-width: 130px;
-    }
-    .result-value {
-      color: var(--text);
-      text-align: right;
-    }
-    .badge-estado {
-      display: inline-block;
-      padding: 0.2rem 0.6rem;
-      border-radius: 20px;
-      font-size: 0.78rem;
-      font-weight: 700;
-      letter-spacing: 0.02em;
-    }
-    .badge-Pendiente    { background: #fff3cd; color: #856404; }
-    .badge-EnProceso    { background: #cff4fc; color: #055160; }
-    .badge-Resuelto     { background: #d1e7dd; color: #0f5132; }
-    .badge-Rechazado    { background: #f8d7da; color: #842029; }
-    .error-box {
-      margin-top: 1.2rem;
-      padding: 0.85rem 1rem;
-      border-radius: 10px;
-      background: #f8d7da;
-      color: #842029;
-      font-size: 0.88rem;
-      display: none;
-      align-items: center;
-      gap: 0.5rem;
-    }
-    .error-box.visible { display: flex; }
-    .back-link {
-      margin-top: 1.5rem;
-      text-align: center;
-    }
-    .back-link a {
-      color: var(--primary);
-      font-size: 0.88rem;
-      text-decoration: none;
-      font-weight: 600;
-    }
-    .back-link a:hover { text-decoration: underline; }
-  </style>
+  <link rel="stylesheet" href="css/styles.css?v=4" />
 </head>
 <body>
   <div class="consulta-wrap">
@@ -154,7 +17,7 @@
         <img src="img/peposcake.png" alt="Pepo's Cake" />
       </div>
       <p class="consulta-title">Consultar mi PQRS</p>
-      <p class="consulta-subtitle">Ingresa el número de caso que recibiste en tu correo para ver el estado actual.</p>
+      <p class="consulta-subtitle">Ingresa el nÃºmero de caso que recibiste en tu correo para ver el estado actual.</p>
 
       <form class="consulta-form" id="formConsulta" autocomplete="off">
         <input
@@ -171,7 +34,7 @@
 
       <div class="error-box" id="errorBox">
         <i class="bi bi-exclamation-triangle-fill"></i>
-        <span id="errorMsg">No se encontró ningún PQRS con ese número.</span>
+        <span id="errorMsg">No se encontrÃ³ ningÃºn PQRS con ese nÃºmero.</span>
       </div>
 
       <div class="result-box" id="resultBox">
@@ -186,23 +49,23 @@
           </div>
           <div class="result-row">
             <span class="result-label">Tipo</span>
-            <span class="result-value" id="resTipo">—</span>
+            <span class="result-value" id="resTipo">â€”</span>
           </div>
           <div class="result-row">
-            <span class="result-label">Área</span>
-            <span class="result-value" id="resArea">—</span>
+            <span class="result-label">Ãrea</span>
+            <span class="result-value" id="resArea">â€”</span>
           </div>
           <div class="result-row">
             <span class="result-label">Fecha de registro</span>
-            <span class="result-value" id="resFecha">—</span>
+            <span class="result-value" id="resFecha">â€”</span>
           </div>
           <div class="result-row">
-            <span class="result-label">Descripción</span>
-            <span class="result-value" id="resDescripcion" style="max-width:280px;word-break:break-word;">—</span>
+            <span class="result-label">DescripciÃ³n</span>
+            <span class="result-value" id="resDescripcion" style="max-width:280px;word-break:break-word;">â€”</span>
           </div>
           <div class="result-row" id="rowSolucion" style="display:none">
-            <span class="result-label">Solución/Respuesta</span>
-            <span class="result-value" id="resSolucion" style="max-width:280px;word-break:break-word;">—</span>
+            <span class="result-label">SoluciÃ³n/Respuesta</span>
+            <span class="result-value" id="resSolucion" style="max-width:280px;word-break:break-word;">â€”</span>
           </div>
         </div>
       </div>
@@ -213,7 +76,9 @@
     </div>
   </div>
 
-  <script src="js/supabase-client.js?v=3"></script>
+  <script src="js/config.js?v=4"></script>
+  <script src="js/utils.js?v=4"></script>
+  <script src="js/supabase-client.js?v=4"></script>
   <script>
     const formConsulta = document.getElementById('formConsulta');
     const errorBox     = document.getElementById('errorBox');
@@ -257,29 +122,24 @@
         await withSupabase(async (db) => {
           const { data, error } = await db
             .from('pqrs')
-            .select('numero_caso, estado, tipo_solicitud, area, fecha_registro, descripcion, solucion, eliminado')
+            .select('numero_caso, estado, tipo_solicitud, motivo, fecha_registro, fecha_resolucion, solucion')
             .eq('numero_caso', numero)
+            .or('eliminado.is.null,eliminado.eq.false')
             .single();
 
           if (error || !data) {
-            showError('No se encontró ningún PQRS con el número "' + numero + '". Verifica e intenta de nuevo.');
+            showError('No se encontrÃ³ ningÃºn PQRS con el nÃºmero "' + numero + '". Verifica e intenta de nuevo.');
             return;
           }
 
-          if (data.eliminado) {
-            showError('El caso "' + numero + '" no está disponible para consulta.');
-            return;
-          }
-
-          // Render result
-          document.getElementById('resNumero').textContent   = data.numero_caso;
-          document.getElementById('resTipo').textContent     = data.tipo_solicitud || '—';
-          document.getElementById('resArea').textContent     = data.area || '—';
-          document.getElementById('resDescripcion').textContent = data.descripcion || '—';
+          // Render result - solo mostrar informaciÃ³n pÃºblica
+          document.getElementById('resNumero').textContent = data.numero_caso;
+          document.getElementById('resTipo').textContent = data.tipo_solicitud || 'â€”';
+          document.getElementById('resDescripcion').textContent = data.motivo || 'â€”';
 
           const estadoEl = document.getElementById('resEstado');
           estadoEl.textContent = data.estado;
-          estadoEl.className   = 'badge-estado ' + estadoBadgeClass(data.estado);
+          estadoEl.className = 'badge-estado ' + estadoBadgeClass(data.estado);
 
           const rawFecha = data.fecha_registro;
           if (rawFecha) {
@@ -290,7 +150,7 @@
           }
 
           const rowSolucion = document.getElementById('rowSolucion');
-          if (data.solucion) {
+          if (data.solucion && data.estado === 'Resuelto') {
             document.getElementById('resSolucion').textContent = data.solucion;
             rowSolucion.style.display = 'flex';
           } else {
@@ -300,7 +160,7 @@
           resultBox.classList.add('visible');
         });
       } catch (err) {
-        showError('Error al consultar. Por favor intenta más tarde.');
+        showError('Error al consultar. Por favor intenta mÃ¡s tarde.');
         console.error(err);
       } finally {
         btn.disabled = false;
@@ -310,3 +170,4 @@
   </script>
 </body>
 </html>
+

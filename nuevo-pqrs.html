@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
@@ -6,8 +6,9 @@
   <title>Nuevo PQRS - Pepo's Cake</title>
   <link rel="stylesheet" href="css/styles.css" />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet">
 </head>
 <body>
   <!-- SIDEBAR -->
@@ -40,7 +41,7 @@
           <span class="user-role" id="userRole"></span>
         </div>
       </div>
-      <button class="btn-logout" id="logoutBtn" title="Cerrar sesión"><i class="bi bi-box-arrow-left"></i> Salir</button>
+      <button class="btn-logout" id="logoutBtn" title="Cerrar sesiÃ³n"><i class="bi bi-box-arrow-left"></i> Salir</button>
     </div>
   </div>
   <div class="sidebar-overlay" id="sidebarOverlay"></div>
@@ -55,13 +56,13 @@
     <main class="page-body">
       <div class="card form-card">
         <div class="card-header">
-          <h3><i class="bi bi-file-earmark-plus-fill"></i> Información del Caso</h3>
+          <h3><i class="bi bi-file-earmark-plus-fill"></i> InformaciÃ³n del Caso</h3>
           <p class="card-subtitle">Complete todos los campos requeridos (*)</p>
         </div>
         <div class="card-body">
           <form id="formNuevoPQRS" novalidate>
 
-            <!-- SECCIÓN 1: DATOS DEL CLIENTE -->
+            <!-- SECCIÃ“N 1: DATOS DEL CLIENTE -->
             <div class="form-section">
               <h4 class="form-section-title"><i class="bi bi-person-fill"></i> Datos del Cliente</h4>
               <div class="form-row">
@@ -72,14 +73,14 @@
                   <span class="field-error" id="err-nombre_cliente"></span>
                 </div>
                 <div class="form-group">
-                  <label for="telefono_cliente">Teléfono</label>
+                  <label for="telefono_cliente">TelÃ©fono</label>
                   <input type="tel" id="telefono_cliente" name="telefono_cliente"
                     placeholder="Ej: 604 322 09 38" maxlength="30" />
                 </div>
               </div>
               <div class="form-row">
                 <div class="form-group">
-                  <label for="correo_cliente">Correo electrónico</label>
+                  <label for="correo_cliente">Correo electrÃ³nico</label>
                   <input type="email" id="correo_cliente" name="correo_cliente"
                     placeholder="cliente@ejemplo.com" maxlength="200" />
                   <span class="field-error" id="err-correo_cliente"></span>
@@ -87,15 +88,15 @@
               </div>
             </div>
 
-            <!-- SECCIÓN 2: CLASIFICACIÓN -->
+            <!-- SECCIÃ“N 2: CLASIFICACIÃ“N -->
             <div class="form-section">
-              <h4 class="form-section-title"><i class="bi bi-tags-fill"></i> Clasificación del Caso</h4>
+              <h4 class="form-section-title"><i class="bi bi-tags-fill"></i> ClasificaciÃ³n del Caso</h4>
               <div class="form-row">
                 <div class="form-group">
                   <label for="tipo_solicitud">Tipo de solicitud *</label>
                   <select id="tipo_solicitud" name="tipo_solicitud" required>
                     <option value="">-- Seleccione --</option>
-                    <option value="Peticion">Petición</option>
+                    <option value="Peticion">PeticiÃ³n</option>
                     <option value="Queja">Queja</option>
                     <option value="Reclamo">Reclamo</option>
                     <option value="Sugerencia">Sugerencia</option>
@@ -103,13 +104,13 @@
                   <span class="field-error" id="err-tipo_solicitud"></span>
                 </div>
                 <div class="form-group">
-                  <label for="area_responsable">Área responsable *</label>
+                  <label for="area_responsable">Ãrea responsable *</label>
                   <select id="area_responsable" name="area_responsable" required>
                     <option value="">-- Seleccione --</option>
-                    <option value="Produccion">Producción</option>
-                    <option value="Envios">Envíos</option>
+                    <option value="Produccion">ProducciÃ³n</option>
+                    <option value="Envios">EnvÃ­os</option>
                     <option value="Entrega">Entrega</option>
-                    <option value="Atencion_cliente">Atención al Cliente</option>
+                    <option value="Atencion_cliente">AtenciÃ³n al Cliente</option>
                   </select>
                   <span class="field-error" id="err-area_responsable"></span>
                 </div>
@@ -117,15 +118,15 @@
               <div class="form-group">
                 <label>Etiquetas <span style="font-weight:400; color:var(--color-text-muted)">(presiona Enter o coma para agregar)</span></label>
                 <div class="tags-container" id="tagsContainer">
-                  <input type="text" class="tag-input" id="tagInput" placeholder="Ej: urgente, devolución..." />
+                  <input type="text" class="tag-input" id="tagInput" placeholder="Ej: urgente, devoluciÃ³n..." />
                 </div>
                 <input type="hidden" id="tagsHidden" name="tags" value="[]" />
               </div>
             </div>
 
-            <!-- SECCIÓN 3: DESCRIPCIÓN -->
+            <!-- SECCIÃ“N 3: DESCRIPCIÃ“N -->
             <div class="form-section">
-              <h4 class="form-section-title"><i class="bi bi-file-text-fill"></i> Descripción del Problema</h4>
+              <h4 class="form-section-title"><i class="bi bi-file-text-fill"></i> DescripciÃ³n del Problema</h4>
               <div class="form-group">
                 <label for="motivo">Motivo del reclamo *</label>
                 <input type="text" id="motivo" name="motivo"
@@ -133,7 +134,7 @@
                 <span class="field-error" id="err-motivo"></span>
               </div>
               <div class="form-group">
-                <label for="descripcion">Descripción detallada *</label>
+                <label for="descripcion">DescripciÃ³n detallada *</label>
                 <textarea id="descripcion" name="descripcion" rows="5"
                   placeholder="Describa en detalle el problema o solicitud del cliente..." required maxlength="3000"></textarea>
                 <span class="char-count" id="charDesc">0 / 3000</span>
@@ -142,18 +143,18 @@
               <div class="form-group">
                 <label for="comentarios_adicionales">Comentarios adicionales</label>
                 <textarea id="comentarios_adicionales" name="comentarios_adicionales" rows="3"
-                  placeholder="Información adicional relevante..." maxlength="2000"></textarea>
+                  placeholder="InformaciÃ³n adicional relevante..." maxlength="2000"></textarea>
               </div>
             </div>
 
-            <!-- SECCIÓN 4: EVIDENCIAS -->
+            <!-- SECCIÃ“N 4: EVIDENCIAS -->
             <div class="form-section">
-              <h4 class="form-section-title"><i class="bi bi-images"></i> Evidencias Fotográficas</h4>
+              <h4 class="form-section-title"><i class="bi bi-images"></i> Evidencias FotogrÃ¡ficas</h4>
               <div class="form-group">
-                <label>Imágenes adjuntas <span style="font-weight:400; color:var(--color-text-muted)">(opcional, máx. 5 imágenes de hasta 5 MB cada una)</span></label>
+                <label>ImÃ¡genes adjuntas <span style="font-weight:400; color:var(--color-text-muted)">(opcional, mÃ¡x. 5 imÃ¡genes de hasta 5 MB cada una)</span></label>
                 <div class="file-upload-area" id="dropZone">
                   <div class="file-upload-icon"><i class="bi bi-cloud-upload-fill"></i></div>
-                  <p class="file-upload-text">Arrastra imágenes aquí o <strong id="filePickerLink">haz clic para seleccionar</strong></p>
+                  <p class="file-upload-text">Arrastra imÃ¡genes aquÃ­ o <strong id="filePickerLink">haz clic para seleccionar</strong></p>
                   <input type="file" id="evidenciasInput" accept="image/*" multiple style="display:none" />
                 </div>
                 <div class="file-preview-grid" id="filePreviewGrid"></div>
@@ -177,8 +178,11 @@
     </main>
   </div>
 
-  <script src="js/supabase-client.js?v=3"></script>
-  <script src="js/auth.js?v=3"></script>
-  <script src="js/pqrs.js?v=3"></script>
+  <script src="js/config.js?v=4"></script>
+  <script src="js/utils.js?v=4"></script>
+  <script src="js/supabase-client.js?v=4"></script>
+  <script src="js/auth.js?v=4"></script>
+  <script src="js/pqrs.js?v=4"></script>
 </body>
 </html>
+
