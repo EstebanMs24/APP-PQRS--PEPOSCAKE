@@ -59,14 +59,6 @@ const CONFIG = {
     Sugerencia: 120
   },
 
-  // SLA en días hábiles (legacy, aún utilizado)
-  SLA_DIAS: {
-    Reclamo: 3,
-    Queja: 5,
-    Peticion: 7,
-    Sugerencia: 15
-  },
-
   // Colores
   COLOR_ESTADO: {
     'Pendiente': '#E07B39',
@@ -106,7 +98,6 @@ const CONFIG = {
 
 // Alias para compatibilidad con código existente
 const PEPOSCAKE_CONFIG = {
-  SLA_DIAS: CONFIG.SLA_DIAS,
   PAGE_SIZE: CONFIG.PAGE_SIZE,
   MAX_TAGS: CONFIG.MAX_TAGS,
   MAX_IMAGENES: CONFIG.MAX_IMAGENES,
