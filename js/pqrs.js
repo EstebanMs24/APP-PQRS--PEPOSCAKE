@@ -247,6 +247,11 @@ function validateForm(data) {
     valid = false;
   }
 
+  if (data.telefono_cliente && !isValidPhone(data.telefono_cliente)) {
+    showFieldError('telefono_cliente', 'El teléfono debe tener entre 7 y 10 dígitos.');
+    valid = false;
+  }
+
   if (!data.tipo_solicitud) {
     showFieldError('tipo_solicitud', 'Selecciona el tipo de solicitud.');
     valid = false;
@@ -286,4 +291,9 @@ function clearErrors() {
 
 function isValidEmail(email) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+}
+
+function isValidPhone(phone) {
+  if (!phone) return true;
+  return /^\d{7,10}$/.test(phone.replace(/\D/g, ''));
 }
