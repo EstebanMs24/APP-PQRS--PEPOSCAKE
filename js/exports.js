@@ -33,6 +33,7 @@ function exportToExcel(data, filename = 'PQRS_Export') {
       'Nº Caso':               row.numero_caso || '',
       'Fecha Registro':        row.fecha_registro ? formatFechaExcel(row.fecha_registro) : '',
       'Nombre Cliente':        row.nombre_cliente || '',
+      'Cédula / NIT':          row.cedula || '',
       'Teléfono':              row.telefono_cliente || '',
       'Correo':                row.correo_cliente || '',
       'Tipo de Solicitud':     labelTipo(row.tipo_solicitud),
@@ -54,6 +55,7 @@ function exportToExcel(data, filename = 'PQRS_Export') {
       { wch: 20 }, // Nº Caso
       { wch: 20 }, // Fecha
       { wch: 30 }, // Nombre
+      { wch: 18 }, // Cédula / NIT
       { wch: 18 }, // Teléfono
       { wch: 28 }, // Correo
       { wch: 18 }, // Tipo

@@ -191,6 +191,7 @@ async function handleSubmit(e) {
     const payload = {
       numero_caso: '',
       nombre_cliente: data.nombre_cliente,
+      cedula: data.cedula || null,
       telefono_cliente: data.telefono_cliente || null,
       correo_cliente: data.correo_cliente || null,
       tipo_solicitud: data.tipo_solicitud,
@@ -232,6 +233,7 @@ function getFormData() {
   try { tags = JSON.parse(tagsRaw); } catch (e) { tags = []; }
   return {
     nombre_cliente: document.getElementById('nombre_cliente').value.trim(),
+    cedula: document.getElementById('cedula')?.value.trim() || '',
     telefono_cliente: document.getElementById('telefono_cliente').value.trim(),
     correo_cliente: document.getElementById('correo_cliente').value.trim(),
     tipo_solicitud: document.getElementById('tipo_solicitud').value,

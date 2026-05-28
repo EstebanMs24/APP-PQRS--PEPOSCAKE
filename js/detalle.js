@@ -56,6 +56,7 @@ async function cargarDetalle(db, id) {
   setDetalle('d-numero_caso', data.numero_caso);
   setDetalle('d-fecha_registro', formatFecha(data.fecha_registro));
   setDetalle('d-nombre_cliente', data.nombre_cliente);
+  setDetalle('d-cedula', data.cedula || '—');
   setDetalle('d-telefono_cliente', data.telefono_cliente || '—');
   setDetalle('d-correo_cliente', data.correo_cliente || '—');
   setDetalle('d-tipo_solicitud', labelTipo(data.tipo_solicitud));
@@ -79,6 +80,25 @@ async function cargarDetalle(db, id) {
     badgeEl.className = `badge-estado badge-${data.estado}`;
     badgeEl.textContent = labelEstado(data.estado);
   }
+
+  // Hero: cliente, meta y chips
+  setDetalle('d-hero-cliente', data.nombre_cliente);
+  const metaEl = document.getElementById('d-hero-meta');
+  if (metaEl) {
+    const partes = [`<span><i class="bi bi-calendar3"></i> ${formatFecha(data.fecha_registro)}</span>`];
+    if (data.correo_cliente) partes.push(`<span><i class="bi bi-envelope"></i> ${escapeHtml(data.correo_cliente)}</span>`);
+    if (data.telefono_cliente) partes.push(`<span><i class="bi bi-telephone"></i> ${escapeHtml(data.telefono_cliente)}</span>`);
+    metaEl.innerHTML = partes.join('');
+  }
+  const chipsEl = document.getElementById('d-hero-chips');
+  if (chipsEl) {
+    let chips = `<span class="chip"><i class="bi bi-tag-fill"></i> ${labelTipo(data.tipo_solicitud)}</span>`;
+    chips += `<span class="chip"><i class="bi bi-building"></i> ${labelArea(data.area_responsable)}</span>`;
+    chips += `<span class="chip"><i class="bi bi-flag-fill"></i> ${labelPrioridad(data.prioridad)}</span>`;
+    (data.tags || []).forEach(t => { chips += `<span class="chip"><i class="bi bi-hash"></i> ${escapeHtml(t)}</span>`; });
+    chipsEl.innerHTML = chips;
+  }
+  renderSlaRing(data);
 
   // Título de página
   const titulo = document.getElementById('paginaTitulo');
@@ -311,6 +331,7 @@ function generarPDF(caso) {
 
   seccion('Datos del Cliente', [
     ['Nombre',   caso.nombre_cliente],
+    ['Cédula / NIT', caso.cedula || '—'],
     ['Teléfono', caso.telefono_cliente || '—'],
     ['Correo',   caso.correo_cliente || '—'],
     ['Fecha de registro', formatFecha(caso.fecha_registro)]
@@ -394,6 +415,36 @@ async function eliminarPQRS(db, id) {
   toast.textContent = '✅ PQRS eliminado y movido a la papelera.';
   document.body.appendChild(toast);
   setTimeout(() => { window.location.href = 'lista-pqrs.html?eliminado=1'; }, 1800);
+}
+
+// ---- Anillo SLA del hero ----
+function renderSlaRing(data) {
+  const el = document.getElementById('d-hero-sla');
+  if (!el) return;
+  const cerrado = data.estado === 'Resuelto' || data.estado === 'Rechazado';
+  if (cerrado) {
+    el.innerHTML = `<span class="sla-ring-cap"><i class="bi bi-check-circle-fill"></i> ${labelEstado(data.estado)}</span>`;
+    return;
+  }
+  const horas = (CONFIG.SLA_HORAS && CONFIG.SLA_HORAS[data.tipo_solicitud]) || 120;
+  const transcurridas = (Date.now() - new Date(data.fecha_registro).getTime()) / 3600000;
+  const restantes = horas - transcurridas;
+  const vencido = restantes <= 0;
+  const frac = vencido ? 1 : Math.max(0, Math.min(1, restantes / horas));
+  const color = vencido ? '#D64045' : (restantes < 24 ? '#E0A82E' : '#7DCFB6');
+  const r = 42, cx = 48, cy = 48, circ = 2 * Math.PI * r;
+  const dash = circ * frac;
+  const texto = vencido ? 'Vencido' : (restantes < 24 ? `${Math.ceil(restantes)}h` : `${Math.ceil(restantes / 24)}d`);
+  el.innerHTML = `
+    <div class="sla-ring">
+      <svg width="96" height="96" viewBox="0 0 96 96">
+        <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="rgba(245,235,216,0.15)" stroke-width="7"/>
+        <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${color}" stroke-width="7"
+          stroke-linecap="round" stroke-dasharray="${dash.toFixed(1)} ${circ.toFixed(1)}"/>
+      </svg>
+      <div class="sla-ring-text"><strong>${texto}</strong>${vencido ? '' : '<small>restantes</small>'}</div>
+    </div>
+    <span class="sla-ring-cap">SLA ${horas}h</span>`;
 }
 
 // ---- HELPERS ----

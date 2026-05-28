@@ -166,32 +166,32 @@ const Utils = {
     `;
   },
 
+  // Paleta semántica para columnas (distinta por categoría)
+  CHART_PALETTE: ['#7DCFB6', '#F0C75A', '#E89098', '#6FA8DC', '#9B8BD4', '#5AB89A'],
+
   renderBarChart(containerId, data, total, labelMap) {
     const container = document.getElementById(containerId);
     if (!container) return;
 
     const sorted = Object.entries(data).sort((a, b) => b[1] - a[1]);
-    const maxVal = sorted.length > 0 ? sorted[0][1] : 1;
-
-    container.innerHTML = sorted.map(([key, count]) => {
-      const pct = maxVal > 0 ? Math.round((count / maxVal) * 100) : 0;
-      const label = (labelMap && labelMap[key]) ? labelMap[key] : key;
-      return `
-        <div class="bar-item">
-          <span class="bar-label">${this.escapeHtml(label)}</span>
-          <div class="bar-track">
-            <div class="bar-fill" style="width: ${pct}%">
-              <span class="bar-value">${count}</span>
-            </div>
-          </div>
-          <span class="bar-count">${count}</span>
-        </div>
-      `;
-    }).join('');
-
     if (sorted.length === 0) {
       container.innerHTML = '<p class="text-muted text-center">Sin datos</p>';
+      return;
     }
+    const maxVal = sorted[0][1] || 1;
+    const palette = Utils.CHART_PALETTE;
+
+    container.innerHTML = `<div class="vbar-chart">` + sorted.map(([key, count], i) => {
+      const h = maxVal > 0 ? Math.max(Math.round((count / maxVal) * 100), 5) : 5;
+      const label = (labelMap && labelMap[key]) ? labelMap[key] : key;
+      const color = palette[i % palette.length];
+      return `
+        <div class="vbar-col">
+          <span class="vbar-value">${count}</span>
+          <div class="vbar-track"><div class="vbar" style="height:${h}%; background:${color}"></div></div>
+          <span class="vbar-label" title="${this.escapeHtml(label)}">${this.escapeHtml(label)}</span>
+        </div>`;
+    }).join('') + `</div>`;
   },
 
   renderTrendSVG(meses) {

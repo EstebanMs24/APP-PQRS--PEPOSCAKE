@@ -95,7 +95,7 @@ async function cargarPagina(db, page = 1) {
 
   // Construir query base
   let query = db.from('pqrs')
-    .select('id, numero_caso, nombre_cliente, tipo_solicitud, area_responsable, prioridad, estado, motivo, fecha_registro, tags, eliminado, eliminado_en, eliminado_por', { count: 'exact' })
+    .select('id, numero_caso, nombre_cliente, cedula, tipo_solicitud, area_responsable, prioridad, estado, motivo, fecha_registro, tags, eliminado, eliminado_en, eliminado_por', { count: 'exact' })
     .order('fecha_registro', { ascending: false })
     .range(offset, offset + CONFIG.ITEMS_POR_PAGINA - 1);
 
@@ -108,7 +108,7 @@ async function cargarPagina(db, page = 1) {
 
   // Aplicar filtros
   if (filtros.search) {
-    query = query.or(`numero_caso.ilike.%${filtros.search}%,nombre_cliente.ilike.%${filtros.search}%`);
+    query = query.or(`numero_caso.ilike.%${filtros.search}%,nombre_cliente.ilike.%${filtros.search}%,cedula.ilike.%${filtros.search}%`);
   }
   if (filtros.estado) query = query.eq('estado', filtros.estado);
   if (filtros.area) query = query.eq('area_responsable', filtros.area);
@@ -208,17 +208,23 @@ function renderTabla(data) {
           <button class="btn btn-outline btn-sm" style="color:#D64045" title="Eliminar" onclick="eliminarDesdeLista('${row.id}', '${Utils.escapeHtml(row.numero_caso)}')"><i class="bi bi-trash"></i></button>
         </div>`;
 
-    return `<tr ${viendoEliminados ? 'style="opacity:0.6"' : ''}>
-      <td><strong style="color:var(--color-primary)">${Utils.escapeHtml(row.numero_caso)}</strong>${tagsBadges ? '<br><small>' + tagsBadges + '</small>' : ''}</td>
-      <td style="white-space:nowrap; font-size:0.9rem">${Utils.formatFecha(row.fecha_registro)}</td>
-      <td>${Utils.escapeHtml(row.nombre_cliente)}</td>
-      <td>${Utils.badgeTipo(row.tipo_solicitud)}</td>
-      <td>${Utils.badgePrioridad(row.prioridad)}</td>
-      <td>${Utils.labelArea(row.area_responsable)}</td>
-      <td style="max-width:150px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap" title="${Utils.escapeHtml(row.motivo)}">${Utils.truncate(row.motivo, 30)}</td>
-      <td style="text-align:center">${slaBadge}</td>
-      <td>${Utils.badgeEstado(row.estado)}</td>
-      <td>${accion}</td>
+    // Clase de fila por estado (tinte + borde izquierdo); rojo si SLA vencido
+    const slaVencido = sla && sla.clase === 'sla-vencido';
+    const rowClass = viendoEliminados
+      ? 'row-estado'
+      : `row-estado row-${row.estado}${slaVencido ? ' row-sla-vencido' : ''}`;
+
+    return `<tr class="${rowClass}" ${viendoEliminados ? 'style="opacity:0.6"' : ''}>
+      <td data-label="Nº Caso"><strong style="color:var(--color-primary)">${Utils.escapeHtml(row.numero_caso)}</strong>${tagsBadges ? '<br><small>' + tagsBadges + '</small>' : ''}</td>
+      <td data-label="Fecha" style="white-space:nowrap; font-size:0.9rem">${Utils.formatFecha(row.fecha_registro)}</td>
+      <td data-label="Cliente">${Utils.escapeHtml(row.nombre_cliente)}</td>
+      <td data-label="Tipo">${Utils.badgeTipo(row.tipo_solicitud)}</td>
+      <td data-label="Prioridad">${Utils.badgePrioridad(row.prioridad)}</td>
+      <td data-label="Área">${Utils.labelArea(row.area_responsable)}</td>
+      <td data-label="Motivo" style="max-width:150px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap" title="${Utils.escapeHtml(row.motivo)}">${Utils.truncate(row.motivo, 30)}</td>
+      <td data-label="SLA" style="text-align:center">${slaBadge}</td>
+      <td data-label="Estado">${Utils.badgeEstado(row.estado)}</td>
+      <td data-label="Acciones">${accion}</td>
     </tr>`;
   }).join('');
 }

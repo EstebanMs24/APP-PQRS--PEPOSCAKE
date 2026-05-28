@@ -4,8 +4,8 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Detalle PQRS - Pepo's Cake</title>
-  <link rel="icon" type="image/png" href="img/mascota-pepo.png?v=11" />
-  <link rel="stylesheet" href="css/styles.css?v=11" />
+  <link rel="icon" type="image/png" href="img/mascota-pepo.png?v=12" />
+  <link rel="stylesheet" href="css/styles.css?v=12" />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -74,14 +74,17 @@
     <div class="detalle-layout">
       <!-- Columna izquierda: info del caso -->
       <div class="detalle-left">
-        <!-- Encabezado del caso -->
-        <div class="card caso-header-card">
-          <div class="caso-numero-badge">
-            <span id="d-numero_caso"></span>
+        <!-- Hero del caso -->
+        <div class="caso-hero">
+          <div class="caso-hero-main">
+            <h2 class="caso-hero-num" id="d-numero_caso"></h2>
+            <div class="caso-hero-cliente" id="d-hero-cliente"></div>
+            <div class="caso-hero-meta" id="d-hero-meta"></div>
+            <div class="caso-hero-chips" id="d-hero-chips"></div>
           </div>
-          <div class="caso-meta">
+          <div class="caso-hero-side">
             <span class="badge-estado" id="d-badge-estado"></span>
-            <span class="caso-fecha" id="d-fecha_registro"></span>
+            <div id="d-hero-sla"></div>
           </div>
         </div>
 
@@ -92,6 +95,10 @@
             <div class="info-item">
               <span class="info-label">Nombre</span>
               <span class="info-value" id="d-nombre_cliente"></span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">Cédula / NIT</span>
+              <span class="info-value" id="d-cedula"></span>
             </div>
             <div class="info-item">
               <span class="info-label">Teléfono</span>
@@ -211,11 +218,11 @@
     </div>
   </template>
 
-  <script src="js/config.js?v=11"></script>
-  <script src="js/utils.js?v=11"></script>
-  <script src="js/supabase-client.js?v=11"></script>
-  <script src="js/auth.js?v=11"></script>
-  <script src="js/detalle.js?v=11"></script>
+  <script src="js/config.js?v=12"></script>
+  <script src="js/utils.js?v=12"></script>
+  <script src="js/supabase-client.js?v=12"></script>
+  <script src="js/auth.js?v=12"></script>
+  <script src="js/detalle.js?v=12"></script>
 </body>
 </html>
 

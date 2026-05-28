@@ -183,25 +183,8 @@ function groupBy(arr, key) {
 }
 
 function renderBarChart(containerId, data, total, labelMap) {
-  const container = document.getElementById(containerId);
-  if (!container) return;
-  const sorted = Object.entries(data).sort((a, b) => b[1] - a[1]);
-  const maxVal = sorted.length > 0 ? sorted[0][1] : 1;
-  container.innerHTML = sorted.map(([key, count]) => {
-    const pct = maxVal > 0 ? Math.round((count / maxVal) * 100) : 0;
-    const label = (labelMap && labelMap[key]) ? labelMap[key] : key;
-    return `
-      <div class="bar-item">
-        <span class="bar-label">${label}</span>
-        <div class="bar-track">
-          <div class="bar-fill" style="width:${pct}%">
-            <span class="bar-value">${count}</span>
-          </div>
-        </div>
-        <span class="bar-count">${count}</span>
-      </div>
-    `;
-  }).join('') || '<p class="text-muted text-center">Sin datos</p>';
+  // Delegar al render vertical compartido de Utils
+  Utils.renderBarChart(containerId, data, total, labelMap);
 }
 
 function setText(id, value) {

@@ -21,6 +21,7 @@ CREATE TABLE pqrs (
   fecha_registro TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   -- Datos del cliente
   nombre_cliente VARCHAR(200) NOT NULL,
+  cedula VARCHAR(30),
   telefono_cliente VARCHAR(30),
   correo_cliente VARCHAR(200),
   -- Clasificación
