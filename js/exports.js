@@ -37,6 +37,7 @@ function exportToExcel(data, filename = 'PQRS_Export') {
       'Correo':                row.correo_cliente || '',
       'Tipo de Solicitud':     labelTipo(row.tipo_solicitud),
       'Área Responsable':      labelArea(row.area_responsable),
+      'Prioridad':             labelPrioridad(row.prioridad),
       'Motivo':                row.motivo || '',
       'Descripción':           row.descripcion || '',
       'Comentarios Adicionales': row.comentarios_adicionales || '',
@@ -57,6 +58,7 @@ function exportToExcel(data, filename = 'PQRS_Export') {
       { wch: 28 }, // Correo
       { wch: 18 }, // Tipo
       { wch: 22 }, // Área
+      { wch: 12 }, // Prioridad
       { wch: 35 }, // Motivo
       { wch: 55 }, // Descripción
       { wch: 40 }, // Comentarios

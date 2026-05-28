@@ -925,6 +925,11 @@ small { font-size: 0.78rem; color: var(--muted); }
 .badge-Entrega          { background: #E8F6F5; color: #2A7D79; }
 .badge-Atencion_cliente { background: #EAF4EC; color: #3A7D46; }
 
+/* Prioridad */
+.badge-prio-Alta   { background: #FEEFEF; color: #B33A3A; }
+.badge-prio-Media  { background: #FFF3E8; color: #A85A20; }
+.badge-prio-Baja   { background: #EEF1F5; color: #5A6678; }
+
 /* Estados especiales */
 .badge-eliminado { background: #FEEFEF; color: #B33A3A; }
 

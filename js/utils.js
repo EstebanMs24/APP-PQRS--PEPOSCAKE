@@ -70,6 +70,10 @@ const Utils = {
     return getLabelEstado(estado);
   },
 
+  labelPrioridad(prioridad) {
+    return getLabelPrioridad(prioridad);
+  },
+
   // Badges HTML
   badgeEstado(estado) {
     return `<span class="badge badge-${estado}">${Utils.labelEstado(estado)}</span>`;
@@ -81,6 +85,11 @@ const Utils = {
 
   badgeArea(area) {
     return `<span class="badge badge-area">${Utils.labelArea(area)}</span>`;
+  },
+
+  badgePrioridad(prioridad) {
+    const p = prioridad || 'Media';
+    return `<span class="badge badge-prio-${p}">${Utils.labelPrioridad(p)}</span>`;
   },
 
   // Notificaciones — Toast premium (usa estructura .toast-container/.toast del CSS)
@@ -280,6 +289,7 @@ function formatFecha(iso)   { return Utils.formatFecha(iso); }
 function labelTipo(tipo)    { return getLabelTipo(tipo); }
 function labelArea(area)    { return getLabelArea(area); }
 function labelEstado(est)   { return getLabelEstado(est); }
+function labelPrioridad(p)  { return getLabelPrioridad(p); }
 function showToast(mensaje, tipo = 'success', opciones = {}) {
   return Utils.showToast(mensaje, tipo, opciones);
 }

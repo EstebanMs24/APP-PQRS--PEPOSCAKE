@@ -26,6 +26,7 @@ CREATE TABLE pqrs (
   -- Clasificación
   tipo_solicitud VARCHAR(30) NOT NULL CHECK (tipo_solicitud IN ('Peticion', 'Queja', 'Reclamo', 'Sugerencia')),
   area_responsable VARCHAR(50) NOT NULL CHECK (area_responsable IN ('Produccion', 'Envios', 'Entrega', 'Atencion_cliente')),
+  prioridad VARCHAR(10) NOT NULL DEFAULT 'Media' CHECK (prioridad IN ('Alta', 'Media', 'Baja')),
   -- Contenido
   motivo VARCHAR(300) NOT NULL,
   descripcion TEXT NOT NULL,

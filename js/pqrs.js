@@ -195,6 +195,7 @@ async function handleSubmit(e) {
       correo_cliente: data.correo_cliente || null,
       tipo_solicitud: data.tipo_solicitud,
       area_responsable: data.area_responsable,
+      prioridad: data.prioridad,
       motivo: data.motivo,
       descripcion: data.descripcion,
       comentarios_adicionales: data.comentarios_adicionales || null,
@@ -235,6 +236,7 @@ function getFormData() {
     correo_cliente: document.getElementById('correo_cliente').value.trim(),
     tipo_solicitud: document.getElementById('tipo_solicitud').value,
     area_responsable: document.getElementById('area_responsable').value,
+    prioridad: document.getElementById('prioridad')?.value || 'Media',
     motivo: document.getElementById('motivo').value.trim(),
     descripcion: document.getElementById('descripcion').value.trim(),
     comentarios_adicionales: document.getElementById('comentarios_adicionales').value.trim(),
@@ -267,6 +269,11 @@ function validateForm(data) {
 
   if (!data.area_responsable) {
     showFieldError('area_responsable', 'Selecciona el área responsable.');
+    valid = false;
+  }
+
+  if (!['Alta', 'Media', 'Baja'].includes(data.prioridad)) {
+    showFieldError('prioridad', 'Selecciona una prioridad válida.');
     valid = false;
   }
 

@@ -11,6 +11,7 @@ let filtros = {
   estado: '',
   area: '',
   tipo: '',
+  prioridad: '',
   desde: '',
   hasta: '',
   tag: ''
@@ -94,7 +95,7 @@ async function cargarPagina(db, page = 1) {
 
   // Construir query base
   let query = db.from('pqrs')
-    .select('id, numero_caso, nombre_cliente, tipo_solicitud, area_responsable, estado, motivo, fecha_registro, tags, eliminado, eliminado_en, eliminado_por', { count: 'exact' })
+    .select('id, numero_caso, nombre_cliente, tipo_solicitud, area_responsable, prioridad, estado, motivo, fecha_registro, tags, eliminado, eliminado_en, eliminado_por', { count: 'exact' })
     .order('fecha_registro', { ascending: false })
     .range(offset, offset + CONFIG.ITEMS_POR_PAGINA - 1);
 
@@ -112,6 +113,7 @@ async function cargarPagina(db, page = 1) {
   if (filtros.estado) query = query.eq('estado', filtros.estado);
   if (filtros.area) query = query.eq('area_responsable', filtros.area);
   if (filtros.tipo) query = query.eq('tipo_solicitud', filtros.tipo);
+  if (filtros.prioridad) query = query.eq('prioridad', filtros.prioridad);
   if (filtros.desde) query = query.gte('fecha_registro', filtros.desde + 'T00:00:00');
   if (filtros.hasta) query = query.lte('fecha_registro', filtros.hasta + 'T23:59:59');
 
@@ -157,6 +159,7 @@ async function aplicarFiltros() {
   filtros.estado = document.getElementById('filtroEstado')?.value || '';
   filtros.area = document.getElementById('filtroArea')?.value || '';
   filtros.tipo = document.getElementById('filtroTipo')?.value || '';
+  filtros.prioridad = document.getElementById('filtroPrioridad')?.value || '';
   filtros.desde = document.getElementById('filtroDesde')?.value || '';
   filtros.hasta = document.getElementById('filtroHasta')?.value || '';
 
@@ -164,12 +167,12 @@ async function aplicarFiltros() {
 }
 
 async function limpiarFiltros() {
-  ['filtroSearch', 'filtroEstado', 'filtroArea', 'filtroTipo', 'filtroDesde', 'filtroHasta'].forEach(id => {
+  ['filtroSearch', 'filtroEstado', 'filtroArea', 'filtroTipo', 'filtroPrioridad', 'filtroDesde', 'filtroHasta'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.value = '';
   });
 
-  filtros = { search: '', estado: '', area: '', tipo: '', desde: '', hasta: '', tag: '' };
+  filtros = { search: '', estado: '', area: '', tipo: '', prioridad: '', desde: '', hasta: '', tag: '' };
   await cargarPagina(currentDb, 1);
 }
 
@@ -181,7 +184,7 @@ function renderTabla(data) {
     const msg = viendoEliminados
       ? 'La papelera está vacía. ¡No hay PQRS eliminados!'
       : 'No se encontraron PQRS con estos filtros. Prueba ajustando la búsqueda.';
-    tbody.innerHTML = `<tr><td colspan="9">
+    tbody.innerHTML = `<tr><td colspan="10">
       <div class="empty-mascot">
         <img src="img/mascota-pepo.png?v=8" alt="Mascota Pepo's Cake" />
         <span class="empty-title">Nada por aquí</span>
@@ -210,6 +213,7 @@ function renderTabla(data) {
       <td style="white-space:nowrap; font-size:0.9rem">${Utils.formatFecha(row.fecha_registro)}</td>
       <td>${Utils.escapeHtml(row.nombre_cliente)}</td>
       <td>${Utils.badgeTipo(row.tipo_solicitud)}</td>
+      <td>${Utils.badgePrioridad(row.prioridad)}</td>
       <td>${Utils.labelArea(row.area_responsable)}</td>
       <td style="max-width:150px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap" title="${Utils.escapeHtml(row.motivo)}">${Utils.truncate(row.motivo, 30)}</td>
       <td style="text-align:center">${slaBadge}</td>

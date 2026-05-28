@@ -51,6 +51,20 @@ const CONFIG = {
     ATENCION_CLIENTE: 'Atencion_cliente'
   },
 
+  // Prioridad
+  PRIORIDADES: {
+    ALTA: 'Alta',
+    MEDIA: 'Media',
+    BAJA: 'Baja'
+  },
+
+  // Colores de prioridad
+  COLOR_PRIORIDAD: {
+    'Alta': '#D64045',
+    'Media': '#E07B39',
+    'Baja': '#8A94A6'
+  },
+
   // SLA en horas
   SLA_HORAS: {
     Peticion: 72,
@@ -138,4 +152,9 @@ function getLabelArea(area) {
     'Atencion_cliente': 'Atención al Cliente'
   };
   return map[area] || area;
+}
+
+function getLabelPrioridad(prioridad) {
+  const map = { 'Alta': 'Alta', 'Media': 'Media', 'Baja': 'Baja' };
+  return map[prioridad] || prioridad || 'Media';
 }

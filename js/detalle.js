@@ -60,6 +60,8 @@ async function cargarDetalle(db, id) {
   setDetalle('d-correo_cliente', data.correo_cliente || '—');
   setDetalle('d-tipo_solicitud', labelTipo(data.tipo_solicitud));
   setDetalle('d-area_responsable', labelArea(data.area_responsable));
+  const prioridadEl = document.getElementById('d-prioridad');
+  if (prioridadEl) prioridadEl.innerHTML = Utils.badgePrioridad(data.prioridad);
   setDetalle('d-motivo', data.motivo);
   setDetalle('d-descripcion', data.descripcion);
 
@@ -316,7 +318,8 @@ function generarPDF(caso) {
 
   seccion('Clasificación', [
     ['Tipo de solicitud', labelTipo(caso.tipo_solicitud)],
-    ['Área responsable', labelArea(caso.area_responsable)]
+    ['Área responsable', labelArea(caso.area_responsable)],
+    ['Prioridad', labelPrioridad(caso.prioridad)]
   ]);
 
   seccion('Descripción del Caso', [
