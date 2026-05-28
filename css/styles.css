@@ -1387,3 +1387,43 @@ small { font-size: 0.78rem; color: var(--muted); }
 .d-flex { display: flex; }
 .gap-2  { gap: 0.5rem; }
 .fw-bold { font-weight: 700; }
+
+/* ================================================================
+   MASCOTA PEPO — uso creativo de la chef 3D de marca
+   ================================================================ */
+.brand-mascot {
+  width: 220px; height: 220px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 5px solid rgba(125, 207, 182, 0.35);
+  box-shadow: 0 14px 40px rgba(125, 207, 182, 0.35), 0 0 0 12px rgba(125, 207, 182, 0.08);
+  margin: 0 auto 1.5rem;
+  display: block;
+  position: relative;
+  z-index: 1;
+  animation: mascotFloat 4.5s ease-in-out infinite;
+}
+.brand-mascot--sm { width: 120px; height: 120px; border-width: 4px; box-shadow: 0 10px 26px rgba(125, 207, 182, 0.3), 0 0 0 8px rgba(125, 207, 182, 0.07); }
+
+@keyframes mascotFloat {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-12px); }
+}
+
+/* Estado vacío amigable con la mascota */
+.empty-mascot {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 0.65rem; padding: 2.5rem 1rem; text-align: center;
+}
+.empty-mascot img {
+  width: 108px; height: 108px; border-radius: 50%;
+  border: 3px solid rgba(125, 207, 182, 0.3);
+  box-shadow: 0 6px 18px rgba(125, 207, 182, 0.22);
+  opacity: 0.96; margin-bottom: 0.4rem;
+}
+.empty-mascot .empty-title { font-weight: 700; color: var(--color-text); font-size: 1.05rem; }
+.empty-mascot p { color: var(--color-text-muted); font-size: 0.92rem; margin: 0; max-width: 340px; }
+
+@media (prefers-reduced-motion: reduce) {
+  .brand-mascot { animation: none; }
+}

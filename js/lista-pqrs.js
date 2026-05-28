@@ -178,7 +178,16 @@ function renderTabla(data) {
   if (!tbody) return;
 
   if (data.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="9" class="text-center" style="padding:2rem; color:var(--color-text-muted);">No se encontraron registros.</td></tr>';
+    const msg = viendoEliminados
+      ? 'La papelera está vacía. ¡No hay PQRS eliminados!'
+      : 'No se encontraron PQRS con estos filtros. Prueba ajustando la búsqueda.';
+    tbody.innerHTML = `<tr><td colspan="9">
+      <div class="empty-mascot">
+        <img src="img/mascota-pepo.png?v=8" alt="Mascota Pepo's Cake" />
+        <span class="empty-title">Nada por aquí</span>
+        <p>${msg}</p>
+      </div>
+    </td></tr>`;
     return;
   }
 

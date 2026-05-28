@@ -90,7 +90,13 @@ async function cargarCasosRecientes(db) {
     return;
   }
   if (data.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="7" class="text-center">No hay PQRS registrados aún.</td></tr>';
+    tbody.innerHTML = `<tr><td colspan="7">
+      <div class="empty-mascot">
+        <img src="img/mascota-pepo.png?v=8" alt="Mascota Pepo's Cake" />
+        <span class="empty-title">Todo tranquilo por ahora</span>
+        <p>Aún no hay PQRS registrados. Cuando llegue el primero, aparecerá aquí.</p>
+      </div>
+    </td></tr>`;
     return;
   }
 
