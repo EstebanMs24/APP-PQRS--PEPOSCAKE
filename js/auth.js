@@ -13,14 +13,25 @@ document.addEventListener('DOMContentLoaded', () => {
     const esLogin = pagina === 'index';
     const esProtegida = PROTECTED_PAGES.includes(pagina);
 
-    // En registro: si hay sesión, ir a dashboard
+    // En registro: si hay sesión activa, ir a dashboard
     if (esRegistro) {
       const { data: { session } } = await db.auth.getSession();
-      if (session) window.location.href = 'dashboard.html';
+      if (session && await usuarioActivo(db, session.user.id)) {
+        window.location.href = 'dashboard.html';
+      }
       return;
     }
 
     const { data: { session } } = await db.auth.getSession();
+
+    // En login: mostrar aviso si fue expulsado por cuenta pendiente
+    if (esLogin) {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('pendiente') === '1') {
+        mostrarError(document.getElementById('loginError'),
+          'Tu cuenta está pendiente de aprobación por un administrador.');
+      }
+    }
 
     // Página protegida sin sesión → login
     if (esProtegida && !session) {
@@ -28,15 +39,25 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
 
-    // Login con sesión → dashboard
+    // Login con sesión → dashboard (solo si la cuenta está activa)
     if (esLogin && session) {
-      window.location.href = 'dashboard.html';
+      if (await usuarioActivo(db, session.user.id)) {
+        window.location.href = 'dashboard.html';
+      } else {
+        await db.auth.signOut();
+      }
       return;
     }
 
     // Cargar datos de usuario si hay sesión
     if (session) {
       await cargarDatosUsuario(db, session.user.id);
+      // Si la cuenta fue desactivada, cerrar sesión y volver al login
+      if (window.currentUser && window.currentUser.activo === false) {
+        await db.auth.signOut();
+        window.location.href = 'index.html?pendiente=1';
+        return;
+      }
       updateRoleBasedElements();
     }
 
@@ -72,7 +93,7 @@ async function handleLogin(e) {
   errorEl.style.display = 'none';
 
   withSupabase(async (db) => {
-    const { error } = await db.auth.signInWithPassword({ email, password });
+    const { data: signInData, error } = await db.auth.signInWithPassword({ email, password });
     if (error) {
       const mensaje = error.message?.toLowerCase().includes('invalid')
         ? 'Correo o contraseña incorrectos.'
@@ -81,6 +102,16 @@ async function handleLogin(e) {
       setLoading(btn, false);
       return;
     }
+
+    // Verificar que la cuenta esté aprobada por un admin
+    const activo = await usuarioActivo(db, signInData.user.id);
+    if (!activo) {
+      await db.auth.signOut();
+      mostrarError(errorEl, 'Tu cuenta está pendiente de aprobación por un administrador.');
+      setLoading(btn, false);
+      return;
+    }
+
     setTimeout(() => window.location.href = 'dashboard.html', 500);
   });
 }
@@ -138,14 +169,16 @@ async function handleRegistro(e) {
       return;
     }
 
-    // Insertar en tabla usuarios con rol 'empleado' por defecto
+    // Insertar en tabla usuarios: rol 'empleado' y CUENTA INACTIVA
+    // hasta que un administrador la apruebe (activo = false)
     const { error: dbError } = await db
       .from('usuarios')
       .insert({
         id: authData.user.id,
         correo: email,
         nombre: nombre,
-        rol: 'empleado'
+        rol: 'empleado',
+        activo: false
       });
 
     if (dbError) {
@@ -154,15 +187,16 @@ async function handleRegistro(e) {
       return;
     }
 
-    // Éxito
+    // La cuenta queda pendiente de aprobación: cerrar cualquier sesión
+    // creada por signUp para que NO acceda al sistema todavía.
     if (authData.session) {
-      mostrarExito(successEl, '¡Bienvenido a Pepo\'s Cake! Redirigiendo...');
-      setTimeout(() => window.location.href = 'dashboard.html', 2000);
-    } else {
-      mostrarExito(successEl, 'Cuenta creada. Confirma tu correo e inicia sesión.');
-      setLoading(btn, false);
-      setTimeout(() => window.location.href = 'index.html', 3000);
+      await db.auth.signOut();
     }
+
+    mostrarExito(successEl,
+      'Cuenta creada. Tu acceso queda pendiente de aprobación por un administrador. Te avisaremos cuando esté activa.');
+    setLoading(btn, false);
+    setTimeout(() => window.location.href = 'index.html', 3500);
   });
 }
 
@@ -180,7 +214,7 @@ async function handleLogout() {
 async function cargarDatosUsuario(db, userId) {
   const { data: perfil } = await db
     .from('usuarios')
-    .select('id, nombre, rol, correo')
+    .select('id, nombre, rol, correo, activo')
     .eq('id', userId)
     .single();
 
@@ -194,6 +228,17 @@ async function cargarDatosUsuario(db, userId) {
     if (nombreEl) nombreEl.textContent = perfil.nombre || 'Usuario';
     if (rolEl) rolEl.textContent = getLabelRol(perfil.rol);
   }
+}
+
+// Devuelve true si la cuenta está aprobada (activa).
+// Los usuarios legacy sin valor se tratan como activos.
+async function usuarioActivo(db, userId) {
+  const { data } = await db
+    .from('usuarios')
+    .select('activo')
+    .eq('id', userId)
+    .single();
+  return !data || data.activo !== false;
 }
 
 function getCurrentUser() {
