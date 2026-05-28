@@ -27,7 +27,7 @@ document.addEventListener('DOMContentLoaded', () => {
       Utils.showToast('PQRS eliminado y movido a la papelera.');
       const btn = document.getElementById('btnVerEliminados');
       if (btn) {
-        btn.textContent = '📋 Ver Activos';
+        btn.innerHTML = '<i class="bi bi-list-check"></i> Ver Activos';
         btn.className = 'btn btn-warning btn-sm';
       }
       const titulo = document.querySelector('.page-title');
@@ -48,7 +48,9 @@ function bindVerEliminados() {
 
   btn.addEventListener('click', async () => {
     viendoEliminados = !viendoEliminados;
-    btn.textContent = viendoEliminados ? '📋 Ver Activos' : '<i class="bi bi-trash"></i> Ver Eliminados';
+    btn.innerHTML = viendoEliminados
+      ? '<i class="bi bi-list-check"></i> Ver Activos'
+      : '<i class="bi bi-trash"></i> Ver Eliminados';
     btn.className = viendoEliminados ? 'btn btn-warning btn-sm' : 'btn btn-outline btn-sm';
 
     const titulo = document.querySelector('.page-title');

@@ -83,26 +83,53 @@ const Utils = {
     return `<span class="badge badge-area">${Utils.labelArea(area)}</span>`;
   },
 
-  // Notificaciones
-  showToast(mensaje, tipo = 'success') {
+  // Notificaciones — Toast premium (usa estructura .toast-container/.toast del CSS)
+  _toastContainer() {
+    let cont = document.querySelector('.toast-container');
+    if (!cont) {
+      cont = document.createElement('div');
+      cont.className = 'toast-container';
+      document.body.appendChild(cont);
+    }
+    return cont;
+  },
+
+  showToast(mensaje, tipo = 'success', opciones = {}) {
+    const cont = this._toastContainer();
+    const iconos = {
+      success: 'bi-check-circle-fill',
+      error: 'bi-x-circle-fill',
+      warning: 'bi-exclamation-triangle-fill',
+      info: 'bi-info-circle-fill'
+    };
+    const titulosDefault = {
+      success: '¡Listo!', error: 'Error', warning: 'Atención', info: 'Información'
+    };
+    const titulo = opciones.title || titulosDefault[tipo] || titulosDefault.info;
     const toast = document.createElement('div');
     toast.className = `toast toast-${tipo}`;
-    toast.innerHTML = `<i class="bi bi-${tipo === 'success' ? 'check-circle' : 'exclamation-circle'}"></i> ${mensaje}`;
-    document.body.appendChild(toast);
-    requestAnimationFrame(() => toast.classList.add('visible'));
-    setTimeout(() => {
-      toast.classList.remove('visible');
-      setTimeout(() => toast.remove(), 300);
-    }, 3500);
+    toast.innerHTML = `
+      <span class="toast-icon"><i class="bi ${iconos[tipo] || iconos.info}"></i></span>
+      <div class="toast-content">
+        <span class="toast-title">${this.escapeHtml(titulo)}</span>
+        <span class="toast-message">${this.escapeHtml(mensaje)}</span>
+      </div>
+      <button class="toast-close" type="button" aria-label="Cerrar"><i class="bi bi-x-lg"></i></button>
+    `;
+    cont.appendChild(toast);
+
+    const cerrar = () => {
+      toast.classList.add('hidden');
+      setTimeout(() => toast.remove(), 320);
+    };
+    toast.querySelector('.toast-close').addEventListener('click', cerrar);
+    const duracion = opciones.duration != null ? opciones.duration : 4000;
+    if (duracion > 0) setTimeout(cerrar, duracion);
+    return toast;
   },
 
   showAlert(mensaje, tipo = 'info') {
-    const alertEl = document.createElement('div');
-    alertEl.className = `alert alert-${tipo}`;
-    alertEl.textContent = mensaje;
-    const container = document.querySelector('.page-body') || document.body;
-    container.insertBefore(alertEl, container.firstChild);
-    setTimeout(() => alertEl.remove(), 5000);
+    return this.showToast(mensaje, tipo);
   },
 
   // Charts y visualización
@@ -243,3 +270,16 @@ const Utils = {
     }
   }
 };
+
+// ============================================================
+// Aliases GLOBALES de compatibilidad
+// Varios módulos (detalle.js, exports.js) llaman estas funciones
+// como globales. Las exponemos delegando a Utils/config.js.
+// ============================================================
+function formatFecha(iso)   { return Utils.formatFecha(iso); }
+function labelTipo(tipo)    { return getLabelTipo(tipo); }
+function labelArea(area)    { return getLabelArea(area); }
+function labelEstado(est)   { return getLabelEstado(est); }
+function showToast(mensaje, tipo = 'success', opciones = {}) {
+  return Utils.showToast(mensaje, tipo, opciones);
+}

@@ -2,6 +2,9 @@
 // REPORTES.JS - Estadísticas y reportes
 // ============================================================
 
+// Guarda los datos del último reporte generado para usarlos en el PDF
+let ultimoReporteData = [];
+
 document.addEventListener('DOMContentLoaded', () => {
   withSupabase(async (db) => {
     await generarReporte(db, null, null);
@@ -32,12 +35,16 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('btnExportExcel').addEventListener('click', async () => {
       const desde = document.getElementById('reporteDesde').value || null;
       const hasta = document.getElementById('reporteHasta').value || null;
-      let query = db.from('pqrs').select('*').or('eliminado.is.null,eliminado.eq.false').order('fecha_registro', { ascending: false });
-      if (desde) query = query.gte('fecha_registro', desde + 'T00:00:00');
-      if (hasta) query = query.lte('fecha_registro', hasta + 'T23:59:59');
-      const { data } = await query;
+      const { data: todos } = await db.from('pqrs').select('*')
+        .or('eliminado.is.null,eliminado.eq.false')
+        .order('fecha_registro', { ascending: false });
+      const data = filtrarPorRango(todos || [], desde, hasta);
+      if (!data.length) {
+        Utils.showToast('No hay PQRS en el rango seleccionado.', 'warning');
+        return;
+      }
       if (typeof exportToExcel === 'function') {
-        exportToExcel(data || [], 'Reporte_PQRS_PeposCake');
+        exportToExcel(data, 'Reporte_PQRS_PeposCake');
       }
     });
 
@@ -49,13 +56,33 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 });
 
-async function generarReporte(db, desde, hasta) {
-  let query = db.from('pqrs').select('*').or('eliminado.is.null,eliminado.eq.false');
-  if (desde) query = query.gte('fecha_registro', desde + 'T00:00:00');
-  if (hasta) query = query.lte('fecha_registro', hasta + 'T23:59:59');
+// Devuelve la fecha local (YYYY-MM-DD) de un timestamp, según la zona del navegador
+function fechaLocalYMD(iso) {
+  const d = new Date(iso);
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const dd = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${dd}`;
+}
 
-  const { data, error } = await query;
-  if (error || !data) return;
+// Filtra por rango de fechas comparando la fecha LOCAL (evita desfases por UTC)
+function filtrarPorRango(data, desde, hasta) {
+  if (!desde && !hasta) return data;
+  return data.filter(row => {
+    const f = fechaLocalYMD(row.fecha_registro);
+    if (desde && f < desde) return false;
+    if (hasta && f > hasta) return false;
+    return true;
+  });
+}
+
+async function generarReporte(db, desde, hasta) {
+  const { data: todos, error } = await db
+    .from('pqrs').select('*').or('eliminado.is.null,eliminado.eq.false');
+  if (error || !todos) return;
+
+  const data = filtrarPorRango(todos, desde, hasta);
+  ultimoReporteData = data;
 
   // KPIs
   const total    = data.length;
@@ -240,6 +267,59 @@ function exportarPDF() {
     y += 6;
   });
   y += 4;
+
+  // ---- GRÁFICOS DE BARRAS (dibujados en el PDF) ----
+  // Dibuja un grupo de barras horizontales con etiqueta y valor
+  function dibujarGrafico(titulo, conteo, labelMap) {
+    const entradas = Object.entries(conteo).sort((a, b) => b[1] - a[1]);
+    if (entradas.length === 0) return;
+    const maxVal = entradas[0][1] || 1;
+
+    doc.setFontSize(12);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(30, 30, 30);
+    doc.text(titulo, margenIzq, y);
+    y += 6;
+
+    const xBarra = margenIzq + 50;
+    const anchoMax = 110;
+    doc.setFontSize(9);
+    entradas.forEach(([key, val]) => {
+      if (y > 270) { doc.addPage(); y = 20; }
+      const label = (labelMap && labelMap[key]) ? labelMap[key] : key;
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(60, 60, 60);
+      doc.text(String(label).substring(0, 26), margenIzq, y + 3);
+      // pista de fondo
+      doc.setFillColor(230, 240, 239);
+      doc.roundedRect(xBarra, y, anchoMax, 4.5, 1, 1, 'F');
+      // barra
+      const w = Math.max((val / maxVal) * anchoMax, 2);
+      doc.setFillColor(78, 205, 196);
+      doc.roundedRect(xBarra, y, w, 4.5, 1, 1, 'F');
+      // valor
+      doc.setTextColor(30, 30, 30);
+      doc.setFont('helvetica', 'bold');
+      doc.text(String(val), xBarra + anchoMax + 4, y + 3.5);
+      y += 7;
+    });
+    y += 4;
+  }
+
+  const porAreaPDF = groupBy(ultimoReporteData, 'area_responsable');
+  dibujarGrafico('PQRS por Área', porAreaPDF, {
+    Produccion: 'Producción', Envios: 'Envíos', Entrega: 'Entrega', Atencion_cliente: 'Atención al Cliente'
+  });
+
+  const porTipoPDF = groupBy(ultimoReporteData, 'tipo_solicitud');
+  dibujarGrafico('PQRS por Tipo', porTipoPDF, {
+    Peticion: 'Petición', Queja: 'Queja', Reclamo: 'Reclamo', Sugerencia: 'Sugerencia'
+  });
+
+  const porEstadoPDF = groupBy(ultimoReporteData, 'estado');
+  dibujarGrafico('PQRS por Estado', porEstadoPDF, {
+    Pendiente: 'Pendiente', En_proceso: 'En Proceso', Resuelto: 'Resuelto', Rechazado: 'Rechazado'
+  });
 
   // Tabla mensual
   const tbody = document.getElementById('tbodyMeses');

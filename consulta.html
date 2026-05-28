@@ -3,12 +3,12 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Consultar PQRS â€” Pepo's Cake</title>
+  <title>Consultar PQRS — Pepo's Cake</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
-  <link rel="stylesheet" href="css/styles.css?v=6" />
+  <link rel="stylesheet" href="css/styles.css?v=7" />
 </head>
 <body>
   <div class="consulta-wrap">
@@ -17,7 +17,7 @@
         <img src="img/peposcake.png" alt="Pepo's Cake" />
       </div>
       <p class="consulta-title">Consultar mi PQRS</p>
-      <p class="consulta-subtitle">Ingresa el nÃºmero de caso que recibiste en tu correo para ver el estado actual.</p>
+      <p class="consulta-subtitle">Ingresa el número de caso que recibiste en tu correo para ver el estado actual.</p>
 
       <form class="consulta-form" id="formConsulta" autocomplete="off">
         <input
@@ -34,7 +34,7 @@
 
       <div class="error-box" id="errorBox">
         <i class="bi bi-exclamation-triangle-fill"></i>
-        <span id="errorMsg">No se encontrÃ³ ningÃºn PQRS con ese nÃºmero.</span>
+        <span id="errorMsg">No se encontró ningún PQRS con ese número.</span>
       </div>
 
       <div class="result-box" id="resultBox">
@@ -49,23 +49,23 @@
           </div>
           <div class="result-row">
             <span class="result-label">Tipo</span>
-            <span class="result-value" id="resTipo">â€”</span>
+            <span class="result-value" id="resTipo">—</span>
           </div>
           <div class="result-row">
-            <span class="result-label">Ãrea</span>
-            <span class="result-value" id="resArea">â€”</span>
+            <span class="result-label">Área</span>
+            <span class="result-value" id="resArea">—</span>
           </div>
           <div class="result-row">
             <span class="result-label">Fecha de registro</span>
-            <span class="result-value" id="resFecha">â€”</span>
+            <span class="result-value" id="resFecha">—</span>
           </div>
           <div class="result-row">
-            <span class="result-label">DescripciÃ³n</span>
-            <span class="result-value" id="resDescripcion" style="max-width:280px;word-break:break-word;">â€”</span>
+            <span class="result-label">Descripción</span>
+            <span class="result-value" id="resDescripcion" style="max-width:280px;word-break:break-word;">—</span>
           </div>
           <div class="result-row" id="rowSolucion" style="display:none">
-            <span class="result-label">SoluciÃ³n/Respuesta</span>
-            <span class="result-value" id="resSolucion" style="max-width:280px;word-break:break-word;">â€”</span>
+            <span class="result-label">Solución/Respuesta</span>
+            <span class="result-value" id="resSolucion" style="max-width:280px;word-break:break-word;">—</span>
           </div>
         </div>
       </div>
@@ -76,9 +76,9 @@
     </div>
   </div>
 
-  <script src="js/config.js?v=6"></script>
-  <script src="js/utils.js?v=6"></script>
-  <script src="js/supabase-client.js?v=6"></script>
+  <script src="js/config.js?v=7"></script>
+  <script src="js/utils.js?v=7"></script>
+  <script src="js/supabase-client.js?v=7"></script>
   <script>
     const formConsulta = document.getElementById('formConsulta');
     const errorBox     = document.getElementById('errorBox');
@@ -128,14 +128,14 @@
             .single();
 
           if (error || !data) {
-            showError('No se encontrÃ³ ningÃºn PQRS con el nÃºmero "' + numero + '". Verifica e intenta de nuevo.');
+            showError('No se encontró ningún PQRS con el número "' + numero + '". Verifica e intenta de nuevo.');
             return;
           }
 
-          // Render result - solo mostrar informaciÃ³n pÃºblica
+          // Render result - solo mostrar información pública
           document.getElementById('resNumero').textContent = data.numero_caso;
-          document.getElementById('resTipo').textContent = data.tipo_solicitud || 'â€”';
-          document.getElementById('resDescripcion').textContent = data.motivo || 'â€”';
+          document.getElementById('resTipo').textContent = data.tipo_solicitud || '—';
+          document.getElementById('resDescripcion').textContent = data.motivo || '—';
 
           const estadoEl = document.getElementById('resEstado');
           estadoEl.textContent = data.estado;

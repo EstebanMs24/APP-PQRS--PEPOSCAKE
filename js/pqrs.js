@@ -80,20 +80,26 @@ function initFileUpload() {
 
   function addFiles(files) {
     files.forEach(file => {
-      if (selectedFiles.length >= 5) return;
-      if (file.size > 5 * 1024 * 1024) { alert(`"${file.name}" supera 5 MB.`); return; }
+      if (selectedFiles.length >= 5) {
+        Utils.showToast('Máximo 5 imágenes por PQRS.', 'warning');
+        return;
+      }
+      if (file.size > 5 * 1024 * 1024) {
+        Utils.showToast(`"${file.name}" supera 5 MB.`, 'warning');
+        return;
+      }
       if (!file.type.startsWith('image/')) return;
       selectedFiles.push(file);
-      const idx = selectedFiles.length - 1;
 
       const reader = new FileReader();
       reader.onload = (ev) => {
         const item = document.createElement('div');
         item.className = 'file-preview-item';
-        item.dataset.idx = idx;
-        item.innerHTML = `<img src="${ev.target.result}" alt="preview" /><button type="button" class="file-preview-remove" title="Quitar">✕</button>`;
+        item.innerHTML = `<img src="${ev.target.result}" alt="preview" /><button type="button" class="file-preview-remove" title="Quitar imagen">✕</button>`;
+        // Quitar usando la identidad del archivo (no un índice fijo que se desactualiza)
         item.querySelector('.file-preview-remove').addEventListener('click', () => {
-          selectedFiles.splice(idx, 1);
+          const pos = selectedFiles.indexOf(file);
+          if (pos > -1) selectedFiles.splice(pos, 1);
           item.remove();
         });
         previewGrid.appendChild(item);
@@ -205,12 +211,14 @@ async function handleSubmit(e) {
       .single();
 
     if (error) {
-      showAlert('formAlert', 'error', 'Error al guardar el PQRS: ' + error.message);
+      Utils.showToast('No se pudo guardar el PQRS: ' + error.message, 'error', { duration: 6000 });
       setLoading(btn, false);
       return;
     }
 
-    showAlert('formAlert', 'success', `✅ PQRS registrado correctamente. Nº ${nuevo.numero_caso}`);
+    Utils.showToast(`PQRS registrado correctamente. N° ${nuevo.numero_caso}`, 'success', {
+      title: '¡PQRS creado!'
+    });
     setTimeout(() => {
       window.location.href = `detalle-pqrs.html?id=${nuevo.id}`;
     }, 1500);
