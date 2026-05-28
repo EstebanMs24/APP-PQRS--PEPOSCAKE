@@ -3,7 +3,10 @@
 // ============================================================
 
 // Páginas protegidas que requieren autenticación
-const PROTECTED_PAGES = ['dashboard', 'nuevo-pqrs', 'lista-pqrs', 'detalle-pqrs', 'reportes'];
+const PROTECTED_PAGES = ['dashboard', 'nuevo-pqrs', 'lista-pqrs', 'detalle-pqrs', 'reportes', 'usuarios'];
+
+// Páginas que requieren rol específico
+const ADMIN_ONLY_PAGES = ['usuarios'];
 
 // Inicializar auth
 document.addEventListener('DOMContentLoaded', () => {
@@ -56,6 +59,11 @@ document.addEventListener('DOMContentLoaded', () => {
       if (window.currentUser && window.currentUser.activo === false) {
         await db.auth.signOut();
         window.location.href = 'index.html?pendiente=1';
+        return;
+      }
+      // Páginas solo-admin: redirigir si no es admin
+      if (ADMIN_ONLY_PAGES.includes(pagina) && window.currentUserRol !== 'admin') {
+        window.location.href = 'dashboard.html';
         return;
       }
       updateRoleBasedElements();

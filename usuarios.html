@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Usuarios - Pepo's Cake</title>
+  <link rel="icon" type="image/png" href="img/mascota-pepo.png?v=10" />
+  <link rel="stylesheet" href="css/styles.css?v=10" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet">
+</head>
+<body>
+  <!-- SIDEBAR -->
+  <div class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <div class="sidebar-logo">
+        <img src="img/peposcakecompleto.png" class="sidebar-logo-img" alt="Pepo's Cake PQRS" />
+      </div>
+      <button class="sidebar-close" id="sidebarClose"><i class="bi bi-x-lg"></i></button>
+    </div>
+    <nav class="sidebar-nav">
+      <a href="dashboard.html" class="nav-item">
+        <span class="nav-icon"><i class="bi bi-speedometer2"></i></span> Dashboard
+      </a>
+      <a href="nuevo-pqrs.html" class="nav-item">
+        <span class="nav-icon"><i class="bi bi-plus-circle-fill"></i></span> Nuevo PQRS
+      </a>
+      <a href="lista-pqrs.html" class="nav-item">
+        <span class="nav-icon"><i class="bi bi-list-ul"></i></span> Todos los PQRS
+      </a>
+      <a href="reportes.html" class="nav-item">
+        <span class="nav-icon"><i class="bi bi-bar-chart-fill"></i></span> Reportes
+      </a>
+      <a href="usuarios.html" class="nav-item active" data-rol-minimo="admin">
+        <span class="nav-icon"><i class="bi bi-people-fill"></i></span> Usuarios
+      </a>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="user-info" id="userInfo">
+        <span class="user-avatar"><i class="bi bi-person-circle"></i></span>
+        <div>
+          <span class="user-name" id="userName">Cargando...</span>
+          <span class="user-role" id="userRole"></span>
+        </div>
+      </div>
+      <button class="btn-logout" id="logoutBtn"><i class="bi bi-box-arrow-left"></i> Salir</button>
+    </div>
+  </div>
+  <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+  <!-- MAIN -->
+  <div class="main-content">
+    <header class="topbar">
+      <button class="menu-toggle" id="menuToggle"><i class="bi bi-list"></i></button>
+      <h2 class="page-title">Gestión de Usuarios</h2>
+    </header>
+
+    <main class="page-body">
+      <!-- Tarjetas resumen -->
+      <section class="stats-grid stats-grid-3" style="margin-bottom:1.5rem;">
+        <div class="stat-card">
+          <div class="stat-icon"><i class="bi bi-people-fill"></i></div>
+          <div class="stat-info">
+            <span class="stat-number" id="statUsuarios">--</span>
+            <span class="stat-label">Total Usuarios</span>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon"><i class="bi bi-check-circle-fill"></i></div>
+          <div class="stat-info">
+            <span class="stat-number" id="statActivos">--</span>
+            <span class="stat-label">Activos</span>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon"><i class="bi bi-hourglass-split"></i></div>
+          <div class="stat-info">
+            <span class="stat-number" id="statPendientes">--</span>
+            <span class="stat-label">Pendientes de aprobación</span>
+          </div>
+        </div>
+      </section>
+
+      <div class="card">
+        <div class="card-header">
+          <h3><i class="bi bi-people-fill"></i> Usuarios del sistema</h3>
+          <button class="btn btn-outline btn-sm" id="btnRecargar"><i class="bi bi-arrow-clockwise"></i> Recargar</button>
+        </div>
+        <div class="card-body p-0">
+          <div class="table-responsive">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>Nombre</th>
+                  <th>Correo</th>
+                  <th>Rol</th>
+                  <th>Estado</th>
+                  <th>Registrado</th>
+                  <th>Acciones</th>
+                </tr>
+              </thead>
+              <tbody id="tbodyUsuarios">
+                <tr><td colspan="6" class="text-center" style="padding:1.5rem;">Cargando usuarios...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script src="js/config.js?v=10"></script>
+  <script src="js/utils.js?v=10"></script>
+  <script src="js/supabase-client.js?v=10"></script>
+  <script src="js/auth.js?v=10"></script>
+  <script src="js/usuarios.js?v=10"></script>
+</body>
+</html>
