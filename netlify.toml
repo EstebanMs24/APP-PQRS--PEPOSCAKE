@@ -57,6 +57,13 @@
   to = "/index.html"
   status = 200
 
+# Catch-all: cualquier ruta inexistente -> pagina 404 personalizada
+# (debe ir despues de los redirects especificos; no afecta archivos reales)
+[[redirects]]
+  from = "/*"
+  to = "/404.html"
+  status = 404
+
 # ---- HEADERS DE SEGURIDAD ----
 [[headers]]
   for = "/*"

@@ -70,7 +70,7 @@ const CONFIG = {
   // Tablas
   TABLA_PQRS: 'pqrs',
   TABLA_USUARIOS: 'usuarios',
-  TABLA_HISTORICO: 'historico_pqrs',
+  TABLA_HISTORICO: 'seguimiento_pqrs',
 
   // Paginación
   ITEMS_POR_PAGINA: 20,
