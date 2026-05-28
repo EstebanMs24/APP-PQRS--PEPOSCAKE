@@ -274,7 +274,7 @@ function generarPDF(caso) {
   doc.text(`Caso: ${caso.numero_caso}`, margen + 4, y + 9);
 
   // Estado
-  const estadoColor = { Pendiente: [230, 81, 0], En_proceso: [21, 101, 192], Resuelto: [46, 125, 50] };
+  const estadoColor = { Pendiente: [230, 81, 0], En_proceso: [21, 101, 192], Resuelto: [46, 125, 50], Rechazado: [214, 64, 69] };
   const color = estadoColor[caso.estado] || [50, 50, 50];
   doc.setFontSize(10);
   doc.setTextColor(...color);

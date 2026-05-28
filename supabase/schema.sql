@@ -31,7 +31,7 @@ CREATE TABLE pqrs (
   descripcion TEXT NOT NULL,
   comentarios_adicionales TEXT,
   -- Estado y resolución
-  estado VARCHAR(30) NOT NULL DEFAULT 'Pendiente' CHECK (estado IN ('Pendiente', 'En_proceso', 'Resuelto')),
+  estado VARCHAR(30) NOT NULL DEFAULT 'Pendiente' CHECK (estado IN ('Pendiente', 'En_proceso', 'Resuelto', 'Rechazado')),
   fecha_resolucion TIMESTAMP WITH TIME ZONE,
   solucion TEXT,
   -- Metadatos
@@ -44,7 +44,7 @@ CREATE TABLE seguimiento_pqrs (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   pqrs_id UUID NOT NULL REFERENCES pqrs(id) ON DELETE CASCADE,
   comentario TEXT NOT NULL,
-  estado_nuevo VARCHAR(30) CHECK (estado_nuevo IN ('Pendiente', 'En_proceso', 'Resuelto')),
+  estado_nuevo VARCHAR(30) CHECK (estado_nuevo IN ('Pendiente', 'En_proceso', 'Resuelto', 'Rechazado')),
   creado_por UUID REFERENCES usuarios(id) ON DELETE SET NULL,
   nombre_usuario VARCHAR(150),
   creado_en TIMESTAMP WITH TIME ZONE DEFAULT NOW()
