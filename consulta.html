@@ -110,36 +110,36 @@
 
       try {
         await withSupabase(async (db) => {
-          const { data, error } = await db
-            .from('pqrs')
-            .select('numero_caso, estado, tipo_solicitud, area_responsable, motivo, fecha_registro, fecha_resolucion, solucion, correo_cliente')
-            .eq('numero_caso', numero)
-            .or('eliminado.is.null,eliminado.eq.false')
-            .single();
+          // Consulta segura vía función SECURITY DEFINER: valida número + correo
+          // en el servidor y solo devuelve campos no sensibles (sin cédula ni
+          // teléfono). La tabla pqrs ya no es legible públicamente.
+          const { data, error } = await db.rpc('consultar_pqrs_publico', {
+            p_numero: numero,
+            p_correo: correo
+          });
 
-          // Verificar coincidencia de correo (privacidad: no exponer casos por solo el número)
-          const correoOk = data && (data.correo_cliente || '').trim().toLowerCase() === correo;
-          if (error || !data || !correoOk) {
+          const caso = Array.isArray(data) && data.length ? data[0] : null;
+          if (error || !caso) {
             showError('No encontramos un PQRS con ese número y correo. Verifica los datos e intenta de nuevo.');
             return;
           }
 
-          document.getElementById('resNumero').textContent = data.numero_caso;
-          document.getElementById('resTipo').textContent = getLabelTipo(data.tipo_solicitud);
-          document.getElementById('resArea').textContent = getLabelArea(data.area_responsable);
+          document.getElementById('resNumero').textContent = caso.numero_caso;
+          document.getElementById('resTipo').textContent = getLabelTipo(caso.tipo_solicitud);
+          document.getElementById('resArea').textContent = getLabelArea(caso.area_responsable);
 
           const estadoEl = document.getElementById('resEstado');
-          estadoEl.textContent = getLabelEstado(data.estado);
-          estadoEl.className = 'badge-estado badge-' + data.estado;
+          estadoEl.textContent = getLabelEstado(caso.estado);
+          estadoEl.className = 'badge-estado badge-' + caso.estado;
 
-          if (data.fecha_registro) {
-            document.getElementById('resFecha').textContent = new Date(data.fecha_registro)
+          if (caso.fecha_registro) {
+            document.getElementById('resFecha').textContent = new Date(caso.fecha_registro)
               .toLocaleDateString('es-CO', { day: '2-digit', month: 'long', year: 'numeric' });
           }
 
           const rowSolucion = document.getElementById('rowSolucion');
-          if (data.solucion && data.estado === 'Resuelto') {
-            document.getElementById('resSolucion').textContent = data.solucion;
+          if (caso.solucion && caso.estado === 'Resuelto') {
+            document.getElementById('resSolucion').textContent = caso.solucion;
             rowSolucion.style.display = 'flex';
           } else {
             rowSolucion.style.display = 'none';

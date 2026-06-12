@@ -138,9 +138,45 @@ CREATE POLICY "Solo admin puede cambiar roles" ON usuarios
     (SELECT rol FROM usuarios WHERE id = auth.uid()) = 'admin'
   );
 
--- Política: consulta pública por número de caso (lectura pública limitada)
-CREATE POLICY "Consulta pública por número de caso" ON pqrs
-  FOR SELECT USING (true);
+-- ============================================================
+-- CONSULTA PÚBLICA SEGURA (portal consulta.html)
+-- ============================================================
+-- IMPORTANTE: NO usar una política SELECT pública (USING (true)) sobre pqrs.
+-- Eso expondría TODOS los datos de clientes (cédula, teléfono, correo) a
+-- cualquiera con la anon key. En su lugar el portal público usa esta función
+-- SECURITY DEFINER que valida número de caso + correo en el servidor y solo
+-- devuelve campos NO sensibles (sin cédula ni teléfono) de un único caso.
+
+DROP POLICY IF EXISTS "Consulta pública por número de caso" ON pqrs;
+
+CREATE OR REPLACE FUNCTION public.consultar_pqrs_publico(p_numero TEXT, p_correo TEXT)
+RETURNS TABLE (
+  numero_caso       VARCHAR,
+  estado            VARCHAR,
+  tipo_solicitud    VARCHAR,
+  area_responsable  VARCHAR,
+  motivo            VARCHAR,
+  fecha_registro    TIMESTAMPTZ,
+  fecha_resolucion  TIMESTAMPTZ,
+  solucion          TEXT
+)
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = public
+AS $$
+  SELECT p.numero_caso, p.estado, p.tipo_solicitud, p.area_responsable,
+         p.motivo, p.fecha_registro, p.fecha_resolucion, p.solucion
+  FROM public.pqrs p
+  WHERE upper(trim(p.numero_caso))  = upper(trim(p_numero))
+    AND lower(trim(p.correo_cliente)) = lower(trim(p_correo))
+    AND COALESCE(p.eliminado, false) = false
+  LIMIT 1;
+$$;
+
+-- Restringir y otorgar ejecución solo a los roles esperados
+REVOKE ALL ON FUNCTION public.consultar_pqrs_publico(TEXT, TEXT) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.consultar_pqrs_publico(TEXT, TEXT) TO anon, authenticated;
 
 -- ============================================================
 -- DATOS INICIALES DE PRUEBA
