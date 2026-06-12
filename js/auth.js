@@ -226,15 +226,22 @@ async function cargarDatosUsuario(db, userId) {
     .eq('id', userId)
     .single();
 
+  const nombreEl = document.getElementById('userName');
+  const rolEl = document.getElementById('userRole');
+
   if (perfil) {
     window.currentUser = perfil;
     window.currentUserRol = perfil.rol;
     localStorage.setItem(CONFIG.STORAGE_KEYS.USUARIO, JSON.stringify(perfil));
 
-    const nombreEl = document.getElementById('userName');
-    const rolEl = document.getElementById('userRole');
     if (nombreEl) nombreEl.textContent = perfil.nombre || 'Usuario';
     if (rolEl) rolEl.textContent = getLabelRol(perfil.rol);
+  } else {
+    // Sin perfil en la tabla usuarios: evitar quedarse en "Cargando..."
+    const { data: { user } } = await db.auth.getUser();
+    const correo = user?.email || 'Usuario';
+    if (nombreEl) nombreEl.textContent = correo;
+    if (rolEl) rolEl.textContent = 'Sin perfil';
   }
 }
 
