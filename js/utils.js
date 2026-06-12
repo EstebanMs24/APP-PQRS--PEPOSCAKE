@@ -266,6 +266,62 @@ const Utils = {
     return Math.ceil(diffMs / (1000 * 60 * 60 * 24));
   },
 
+  // ---- SLA (Acuerdo de Nivel de Servicio) ----
+  // Calcula el estado de SLA de un PQRS a partir de fecha_registro + tipo + estado.
+  // La fecha límite = fecha_registro + CONFIG.SLA_HORAS[tipo] horas.
+  // Devuelve null para Resuelto/Rechazado o si faltan datos (no aplica SLA).
+  // Estados: nivel 'ok' (A tiempo), 'warning' (Por vencer, <25% del tiempo
+  // restante) o 'vencido'.
+  calcularEstadoSLA(pqrs) {
+    if (!pqrs) return null;
+    if (pqrs.estado === 'Resuelto' || pqrs.estado === 'Rechazado') return null;
+    const horas = (CONFIG.SLA_HORAS && CONFIG.SLA_HORAS[pqrs.tipo_solicitud]) || null;
+    if (!horas || !pqrs.fecha_registro) return null;
+
+    const inicio = new Date(pqrs.fecha_registro).getTime();
+    if (isNaN(inicio)) return null;
+
+    const ventanaMs = horas * 3600000;
+    const limite = inicio + ventanaMs;
+    const msRestantes = limite - Date.now();
+    const horasRestantes = msRestantes / 3600000;
+
+    let nivel, label;
+    if (msRestantes <= 0) {
+      nivel = 'vencido'; label = 'Vencido';
+    } else if (msRestantes < ventanaMs * 0.25) {
+      nivel = 'warning'; label = 'Por vencer';
+    } else {
+      nivel = 'ok'; label = 'A tiempo';
+    }
+    return { nivel, label, limite, horasRestantes, horasTotales: horas };
+  },
+
+  // Texto compacto del tiempo (ej "2d", "5h") a partir de horas restantes.
+  _slaTiempoTexto(sla) {
+    const h = Math.abs(sla.horasRestantes);
+    return h >= 24 ? `${Math.floor(h / 24)}d` : `${Math.max(1, Math.ceil(h))}h`;
+  },
+
+  // Badge HTML de SLA reutilizando los estilos .sla-badge existentes.
+  // Resuelto/Rechazado (sin SLA) muestran un guion neutro.
+  renderSlaBadge(pqrs) {
+    const sla = this.calcularEstadoSLA(pqrs);
+    if (!sla) return '<span class="sla-badge sla-resuelto">—</span>';
+
+    const cfg = {
+      ok:      { cls: 'sla-ok',      icon: 'bi-check-circle' },
+      warning: { cls: 'sla-warning', icon: 'bi-clock-history' },
+      vencido: { cls: 'sla-vencido', icon: 'bi-exclamation-triangle-fill' }
+    }[sla.nivel];
+
+    const tiempo = this._slaTiempoTexto(sla);
+    const title = sla.nivel === 'vencido'
+      ? `Vencido hace ${tiempo}`
+      : `${sla.label} · quedan ${tiempo}`;
+    return `<span class="sla-badge ${cfg.cls}" title="${title}"><i class="bi ${cfg.icon}"></i> ${sla.label} · ${tiempo}</span>`;
+  },
+
   // Conversiones
   toJSON(obj) {
     return JSON.stringify(obj);
@@ -290,6 +346,8 @@ function labelTipo(tipo)    { return getLabelTipo(tipo); }
 function labelArea(area)    { return getLabelArea(area); }
 function labelEstado(est)   { return getLabelEstado(est); }
 function labelPrioridad(p)  { return getLabelPrioridad(p); }
+function calcularEstadoSLA(pqrs) { return Utils.calcularEstadoSLA(pqrs); }
+function renderSlaBadge(pqrs)    { return Utils.renderSlaBadge(pqrs); }
 function showToast(mensaje, tipo = 'success', opciones = {}) {
   return Utils.showToast(mensaje, tipo, opciones);
 }

@@ -63,33 +63,6 @@ function bindVerEliminados() {
   });
 }
 
-function calcularSLA(row) {
-  if (row.estado === 'Resuelto') {
-    return { clase: 'sla-ok', texto: '<i class="bi bi-check-circle"></i> Resuelto', horas: 0 };
-  }
-
-  const horas = CONFIG.SLA_HORAS[row.tipo_solicitud];
-  if (!horas) return { clase: 'sla-info', texto: 'N/A', horas: 0 };
-
-  const registro = new Date(row.fecha_registro);
-  const ahora = new Date();
-  const msTranscurridos = ahora - registro;
-  const horasTranscurridas = msTranscurridos / 3600000;
-  const horasRestantes = horas - horasTranscurridas;
-
-  if (horasRestantes < 0) {
-    return { clase: 'sla-vencido', texto: '<i class="bi bi-exclamation-circle"></i> Vencido', horas: 0 };
-  }
-
-  if (horasRestantes < 24) {
-    const color = horasRestantes < 12 ? 'sla-critico' : 'sla-warning';
-    return { clase: color, texto: `<i class="bi bi-clock"></i> ${Math.ceil(horasRestantes)}h`, horas: horasRestantes };
-  }
-
-  const diasRestantes = Math.ceil(horasRestantes / 24);
-  return { clase: 'sla-ok', texto: `<i class="bi bi-check"></i> ${diasRestantes}d`, horas: horasRestantes };
-}
-
 async function cargarPagina(db, page = 1) {
   const offset = (page - 1) * CONFIG.ITEMS_POR_PAGINA;
 
@@ -195,10 +168,10 @@ function renderTabla(data) {
   }
 
   tbody.innerHTML = data.map(row => {
-    const sla = viendoEliminados ? null : calcularSLA(row);
-    const slaBadge = sla
-      ? `<span class="sla-badge ${sla.clase}" title="SLA: ${Math.round(sla.horas)}h">${sla.texto}</span>`
-      : (viendoEliminados ? `<small style="color:var(--color-text-muted)">${row.eliminado_en ? Utils.formatFechaCorta(row.eliminado_en) : '—'}</small>` : '—');
+    const sla = viendoEliminados ? null : Utils.calcularEstadoSLA(row);
+    const slaBadge = viendoEliminados
+      ? `<small style="color:var(--color-text-muted)">${row.eliminado_en ? Utils.formatFechaCorta(row.eliminado_en) : '—'}</small>`
+      : Utils.renderSlaBadge(row);
     const tagsBadges = (row.tags || []).map(t => `<span class="tag-badge">${Utils.escapeHtml(t)}</span>`).join('');
 
     const accion = viendoEliminados
@@ -209,7 +182,7 @@ function renderTabla(data) {
         </div>`;
 
     // Clase de fila por estado (tinte + borde izquierdo); rojo si SLA vencido
-    const slaVencido = sla && sla.clase === 'sla-vencido';
+    const slaVencido = sla && sla.nivel === 'vencido';
     const rowClass = viendoEliminados
       ? 'row-estado'
       : `row-estado row-${row.estado}${slaVencido ? ' row-sla-vencido' : ''}`;

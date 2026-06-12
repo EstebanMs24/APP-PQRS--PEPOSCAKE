@@ -676,6 +676,8 @@ img { max-width: 100%; }
 .stat-card.stat-eliminado::after { background: linear-gradient(135deg, #EF5350 0%, #E53935 100%); }
 .stat-card.sla-vencido::after { background: linear-gradient(135deg, #FF7043 0%, #FF5722 100%); }
 .stat-card.stat-sla-vencido::after { background: linear-gradient(135deg, #FF7043 0%, #FF5722 100%); }
+.stat-card.por-vencer::after { background: linear-gradient(135deg, #FFB300 0%, #FF8F00 100%); }
+.stat-card.stat-por-vencer::after { background: linear-gradient(135deg, #FFB300 0%, #FF8F00 100%); }
 
 .stat-card::after {
   content: '';
@@ -743,6 +745,7 @@ img { max-width: 100%; }
 .stat-resuelto .stat-icon { background: linear-gradient(135deg, rgba(102,187,106,0.18) 0%, rgba(102,187,106,0.08) 100%); color: #66BB6A; }
 .stat-eliminado .stat-icon { background: linear-gradient(135deg, rgba(239,83,80,0.18) 0%, rgba(239,83,80,0.08) 100%); color: #EF5350; }
 .stat-sla-vencido .stat-icon { background: linear-gradient(135deg, rgba(255,112,67,0.18) 0%, rgba(255,112,67,0.08) 100%); color: #FF7043; }
+.stat-por-vencer .stat-icon { background: linear-gradient(135deg, rgba(255,179,0,0.18) 0%, rgba(255,179,0,0.08) 100%); color: #FF8F00; }
 
 .stat-card:hover .stat-icon {
   transform: scale(1.12) rotate(5deg);
@@ -998,6 +1001,12 @@ small { font-size: 0.78rem; color: var(--muted); }
 .sla-warning { background: #fffbeb; color: #744210; border: 1px solid #fbd38d; }
 .sla-vencido { background: #fff5f5; color: #742a2a; border: 1px solid #feb2b2; }
 .sla-resuelto { background: #f7fafc; color: #4a5568; border: 1px solid #e2e8f0; }
+
+/* SLA badges en modo oscuro */
+[data-theme="dark"] .sla-ok       { background: rgba(102,187,106,0.18); color: #8FE0A0; border-color: rgba(102,187,106,0.38); }
+[data-theme="dark"] .sla-warning  { background: rgba(255,193,7,0.18);  color: #FFD24D; border-color: rgba(255,193,7,0.40); }
+[data-theme="dark"] .sla-vencido  { background: rgba(239,83,80,0.20);  color: #FF9C99; border-color: rgba(239,83,80,0.42); }
+[data-theme="dark"] .sla-resuelto { background: rgba(255,255,255,0.06); color: #9FBFB5; border-color: rgba(255,255,255,0.12); }
 
 /* TOAST NOTIFICATIONS - PREMIUM */
 .toast-container {

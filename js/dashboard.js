@@ -37,16 +37,16 @@ async function cargarEstadisticas(db) {
   setText('statProceso', proceso);
   setText('statResuelto', resuelto);
 
-  // SLA Vencido: activos cuyo plazo de horas ha expirado
-  const ahora = Date.now();
-  const slaVencidos = data.filter(d => {
-    if (d.estado === 'Resuelto') return false;
-    const horas = CONFIG.SLA_HORAS[d.tipo_solicitud] || 120;
-    const msTranscurridos = ahora - new Date(d.fecha_registro).getTime();
-    const horasTranscurridas = msTranscurridos / 3600000;
-    return horasTranscurridas > horas;
-  }).length;
+  // SLA: contar vencidos y por vencer con la lógica centralizada (Utils)
+  let slaVencidos = 0, slaPorVencer = 0;
+  data.forEach(d => {
+    const sla = Utils.calcularEstadoSLA(d);
+    if (!sla) return;
+    if (sla.nivel === 'vencido') slaVencidos++;
+    else if (sla.nivel === 'warning') slaPorVencer++;
+  });
   setText('statSlaVencido', slaVencidos);
+  setText('statPorVencer', slaPorVencer);
 
   // Contar eliminados
   const { count: countEliminados, error: errCount } = await db
