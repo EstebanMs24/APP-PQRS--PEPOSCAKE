@@ -322,6 +322,53 @@ const Utils = {
     return `<span class="sla-badge ${cfg.cls}" title="${title}"><i class="bi ${cfg.icon}"></i> ${sla.label} · ${tiempo}</span>`;
   },
 
+  // Modal de confirmación propio (reemplaza confirm() nativo).
+  // Devuelve una Promise<boolean>. Respeta dark mode vía tokens CSS.
+  confirmModal(opts = {}) {
+    const {
+      title = '¿Confirmar acción?',
+      message = '',
+      confirmText = 'Confirmar',
+      cancelText = 'Cancelar',
+      variant = 'primary'   // 'primary' | 'danger'
+    } = opts;
+
+    return new Promise((resolve) => {
+      const overlay = document.createElement('div');
+      overlay.className = 'modal-overlay';
+      overlay.innerHTML = `
+        <div class="modal-box" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+          <div class="modal-header">
+            <h3 id="modalTitle" class="modal-title">${this.escapeHtml(title)}</h3>
+          </div>
+          <div class="modal-body">${this.escapeHtml(message)}</div>
+          <div class="modal-actions">
+            <button type="button" class="btn btn-outline" data-modal="cancel">${this.escapeHtml(cancelText)}</button>
+            <button type="button" class="btn ${variant === 'danger' ? 'btn-danger' : 'btn-primary'}" data-modal="ok">${this.escapeHtml(confirmText)}</button>
+          </div>
+        </div>`;
+      document.body.appendChild(overlay);
+      requestAnimationFrame(() => overlay.classList.add('visible'));
+
+      const cerrar = (resultado) => {
+        overlay.classList.remove('visible');
+        document.removeEventListener('keydown', onKey);
+        setTimeout(() => overlay.remove(), 200);
+        resolve(resultado);
+      };
+      const onKey = (e) => {
+        if (e.key === 'Escape') cerrar(false);
+        if (e.key === 'Enter')  cerrar(true);
+      };
+
+      document.addEventListener('keydown', onKey);
+      overlay.querySelector('[data-modal="ok"]').addEventListener('click', () => cerrar(true));
+      overlay.querySelector('[data-modal="cancel"]').addEventListener('click', () => cerrar(false));
+      overlay.addEventListener('click', (e) => { if (e.target === overlay) cerrar(false); });
+      setTimeout(() => overlay.querySelector('[data-modal="ok"]').focus(), 50);
+    });
+  },
+
   // Conversiones
   toJSON(obj) {
     return JSON.stringify(obj);

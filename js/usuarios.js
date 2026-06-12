@@ -35,7 +35,7 @@ async function cargarUsuarios(db) {
   if (!data || data.length === 0) {
     tbody.innerHTML = `<tr><td colspan="6">
       <div class="empty-mascot">
-        <img src="img/mascota-pepo.png?v=10" alt="Mascota Pepo's Cake" />
+        <img src="img/mascota-pepo.png?v=14" alt="Mascota Pepo's Cake" />
         <span class="empty-title">Sin usuarios</span>
         <p>Aún no hay usuarios registrados en el sistema.</p>
       </div>
@@ -104,7 +104,14 @@ function actualizarStats(data) {
 
 async function toggleActivo(db, id, nombre, activar) {
   const accionTxt = activar ? 'aprobar' : 'desactivar';
-  if (!confirm(`¿Seguro que deseas ${accionTxt} la cuenta de "${nombre}"?`)) return;
+  const ok = await Utils.confirmModal({
+    title: activar ? 'Aprobar cuenta' : 'Desactivar cuenta',
+    message: `¿Seguro que deseas ${accionTxt} la cuenta de "${nombre}"?`,
+    confirmText: activar ? 'Aprobar' : 'Desactivar',
+    cancelText: 'Cancelar',
+    variant: activar ? 'primary' : 'danger'
+  });
+  if (!ok) return;
 
   const { error } = await db.from('usuarios').update({ activo: activar }).eq('id', id);
   if (error) {

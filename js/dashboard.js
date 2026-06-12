@@ -92,7 +92,7 @@ async function cargarCasosRecientes(db) {
   if (data.length === 0) {
     tbody.innerHTML = `<tr><td colspan="7">
       <div class="empty-mascot">
-        <img src="img/mascota-pepo.png?v=8" alt="Mascota Pepo's Cake" />
+        <img src="img/mascota-pepo.png?v=14" alt="Mascota Pepo's Cake" />
         <span class="empty-title">Todo tranquilo por ahora</span>
         <p>Aún no hay PQRS registrados. Cuando llegue el primero, aparecerá aquí.</p>
       </div>

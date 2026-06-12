@@ -159,7 +159,7 @@ function renderTabla(data) {
       : 'No se encontraron PQRS con estos filtros. Prueba ajustando la búsqueda.';
     tbody.innerHTML = `<tr><td colspan="10">
       <div class="empty-mascot">
-        <img src="img/mascota-pepo.png?v=8" alt="Mascota Pepo's Cake" />
+        <img src="img/mascota-pepo.png?v=14" alt="Mascota Pepo's Cake" />
         <span class="empty-title">Nada por aquí</span>
         <p>${msg}</p>
       </div>
