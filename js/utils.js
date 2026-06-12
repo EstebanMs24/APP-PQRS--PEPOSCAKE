@@ -230,8 +230,8 @@ const Utils = {
       <svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" style="width:100%; max-width:${W}px;">
         <defs>
           <linearGradient id="trendGrad" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stop-color="#4ECDC4" stop-opacity="0.6"/>
-            <stop offset="100%" stop-color="#4ECDC4" stop-opacity="0"/>
+            <stop offset="0%" stop-color="#00BCD4" stop-opacity="0.35"/>
+            <stop offset="100%" stop-color="#00BCD4" stop-opacity="0"/>
           </linearGradient>
         </defs>
         ${gridLines}

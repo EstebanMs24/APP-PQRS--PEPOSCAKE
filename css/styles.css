@@ -1188,6 +1188,48 @@ small { font-size: 0.78rem; color: var(--muted); }
 }
 .trend-chart-wrap svg { overflow: visible; }
 
+/* GRÁFICO DE TENDENCIA — estilos SVG */
+.trend-area {
+  fill: url(#trendGrad);
+  stroke: none;
+}
+.trend-line {
+  fill: none;
+  stroke: #00BCD4;
+  stroke-width: 3;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  filter: drop-shadow(0 2px 4px rgba(0,188,212,0.3));
+}
+.trend-dot {
+  fill: #FFFFFF;
+  stroke: #00BCD4;
+  stroke-width: 3;
+  transition: r 0.2s ease;
+}
+.trend-dot:hover {
+  r: 7;
+}
+.trend-dot-label {
+  fill: #0097A7;
+  font-size: 12px;
+  font-weight: 700;
+  font-family: var(--font);
+}
+.trend-grid-line {
+  stroke: var(--color-border);
+  stroke-width: 1;
+  stroke-dasharray: 3 3;
+}
+.trend-month-label {
+  fill: var(--color-text-muted);
+  font-size: 11px;
+  font-weight: 500;
+  font-family: var(--font);
+}
+
+[data-theme="dark"] .trend-dot { fill: #16302A; }
+
 /* DETALLE PQRS */
 .detalle-layout { display: grid; grid-template-columns: 1fr 380px; gap: 1.25rem; align-items: start; }
 .detalle-left  { display: flex; flex-direction: column; gap: 1.25rem; }
