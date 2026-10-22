@@ -8,7 +8,7 @@ let currentDb = null;
 let miUserId = null;
 
 document.addEventListener('DOMContentLoaded', () => {
-  withSupabase(async (db) => {
+  withAdmin(async (db) => {
     currentDb = db;
     const { data: { user } } = await db.auth.getUser();
     miUserId = user ? user.id : null;
@@ -35,7 +35,7 @@ async function cargarUsuarios(db) {
   if (!data || data.length === 0) {
     tbody.innerHTML = `<tr><td colspan="6">
       <div class="empty-mascot">
-        <img src="img/mascota-pepo.png?v=14" alt="Mascota Pepo's Cake" />
+        <img src="img/mascota-pepo.png?v=15" alt="Mascota Pepo's Cake" />
         <span class="empty-title">Sin usuarios</span>
         <p>Aún no hay usuarios registrados en el sistema.</p>
       </div>
@@ -48,7 +48,7 @@ async function cargarUsuarios(db) {
 
   tbody.innerHTML = data.map(u => {
     const esYo = u.id === miUserId;
-    const activo = u.activo !== false;
+    const activo = u.activo === true;
     const estadoBadge = activo
       ? '<span class="badge badge-Resuelto">Activo</span>'
       : '<span class="badge badge-Pendiente">Pendiente</span>';
@@ -96,7 +96,7 @@ async function cargarUsuarios(db) {
 
 function actualizarStats(data) {
   const total = data.length;
-  const activos = data.filter(u => u.activo !== false).length;
+  const activos = data.filter(u => u.activo === true).length;
   setText('statUsuarios', total);
   setText('statActivos', activos);
   setText('statPendientes', total - activos);
@@ -113,7 +113,7 @@ async function toggleActivo(db, id, nombre, activar) {
   });
   if (!ok) return;
 
-  const { error } = await db.from('usuarios').update({ activo: activar }).eq('id', id);
+  const { error } = await db.from('usuarios').update({ activo: activar }).eq('id', id).select('id').single();
   if (error) {
     Utils.showToast('No se pudo actualizar: ' + error.message, 'error');
     return;
@@ -126,7 +126,7 @@ async function toggleActivo(db, id, nombre, activar) {
 }
 
 async function cambiarRol(db, id, nuevoRol, selectEl) {
-  const { error } = await db.from('usuarios').update({ rol: nuevoRol }).eq('id', id);
+  const { error } = await db.from('usuarios').update({ rol: nuevoRol }).eq('id', id).select('id').single();
   if (error) {
     Utils.showToast('No se pudo cambiar el rol: ' + error.message, 'error');
     await cargarUsuarios(db); // revertir visualmente

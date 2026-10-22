@@ -28,27 +28,25 @@ function getSupabaseClient() {
   return window._supabaseClient;
 }
 
-// Espera a que Supabase SDK esté disponible y ejecuta callback
-function withSupabase(callback) {
-  if (window.supabase) {
-    callback(getSupabaseClient());
-    return;
+
+// One shared promise; callers can await SDK loading and asynchronous failures.
+let sdkPromise;
+function supabaseReady() {
+  if (!sdkPromise) sdkPromise = new Promise((resolve, reject) => {
+    let attempts = 0;
+    const check = () => {
+      if (window.supabase) { resolve(getSupabaseClient()); return; }
+      if (++attempts >= 200) { sdkPromise = null; reject(new Error('No se pudo cargar la conexión. Revisa tu internet.')); return; }
+      setTimeout(check, 50);
+    };
+    check();
+  });
+  return sdkPromise;
+}
+async function withSupabase(callback) {
+  try { return await callback(await supabaseReady()); }
+  catch {
+    if (typeof Utils !== 'undefined') Utils.showToast('La operación no pudo completarse. Revisa la conexión e intenta de nuevo.', 'error');
+    return undefined;
   }
-  let attempts = 0;
-  const interval = setInterval(() => {
-    attempts++;
-    if (window.supabase) {
-      clearInterval(interval);
-      callback(getSupabaseClient());
-    } else if (attempts >= 200) { // 10 segundos máximo
-      clearInterval(interval);
-      console.error('No se pudo conectar con Supabase. Verifica tu conexión a internet.');
-      // Mostrar error visible al usuario si hay un contenedor de error disponible
-      const errEl = document.getElementById('loginError') || document.getElementById('registroError');
-      if (errEl) {
-        errEl.textContent = 'Error de conexión. Verifica tu internet e intenta de nuevo.';
-        errEl.style.display = 'block';
-      }
-    }
-  }, 50);
 }

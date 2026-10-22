@@ -1,25 +1,25 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="es" class="auth-pending">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <script>(function(){try{if(localStorage.getItem('pqrs_tema')==='dark')document.documentElement.setAttribute('data-theme','dark');}catch(e){}})();</script>
   <title>Lista de PQRS - Pepo's Cake</title>
-  <link rel="icon" type="image/png" href="img/mascota-pepo.png?v=14" />
-  <link rel="stylesheet" href="css/styles.css?v=14" />
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
+  <link rel="icon" type="image/png" href="img/mascota-pepo.png?v=15" />
+  <link rel="stylesheet" href="css/styles.css?v=15" />
+  <link rel="stylesheet" href="css/bootstrap-icons.css" />
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet">
 </head>
-<body>
+<body><a class="skip-link" href="#contenido">Saltar al contenido</a>
   <!-- SIDEBAR -->
   <div class="sidebar" id="sidebar">
     <div class="sidebar-header">
       <div class="sidebar-logo">
         <img src="img/peposcakecompleto.png" class="sidebar-logo-img" alt="Pepo's Cake PQRS" />
       </div>
-      <button class="sidebar-close" id="sidebarClose"><i class="bi bi-x-lg"></i></button>
+      <button class="sidebar-close" id="sidebarClose" aria-label="Cerrar navegación"><i class="bi bi-x-lg"></i></button>
     </div>
     <nav class="sidebar-nav">
       <a href="dashboard.html" class="nav-item">
@@ -54,16 +54,16 @@
   <!-- MAIN -->
   <div class="main-content">
     <header class="topbar">
-      <button class="menu-toggle" id="menuToggle"><i class="bi bi-list"></i></button>
-      <h2 class="page-title">Todos los PQRS</h2>
+      <button class="menu-toggle" id="menuToggle" aria-label="Abrir navegación" aria-controls="sidebar" aria-expanded="false"><i class="bi bi-list"></i></button>
+      <h1 class="page-title">Todos los PQRS</h1>
       <div class="topbar-actions">
-        <button class="btn btn-outline btn-sm" id="btnVerEliminados" data-rol-minimo="admin"><i class="bi bi-trash3"></i> Ver Eliminados</button>
+        <button class="btn btn-outline btn-sm" id="btnVerEliminados" data-rol-minimo="admin"><i class="bi bi-trash3"></i> Ver archivados</button>
         <button class="btn btn-success btn-sm" id="btnExportExcel" data-rol-minimo="admin"><i class="bi bi-file-earmark-excel-fill"></i> Excel</button>
         <a href="nuevo-pqrs.html" class="btn btn-primary btn-sm"><i class="bi bi-plus-circle-fill"></i> Nuevo</a>
       </div>
     </header>
 
-    <main class="page-body">
+    <main class="page-body" id="contenido"><div class="page-intro"><h2>Gestión de solicitudes</h2><p>Encuentra un caso, revisa su seguimiento o administra el archivo.</p></div>
       <!-- Banner de éxito (eliminación) -->
       <div id="bannerExito" style="display:none;background:#2e7d32;color:#fff;padding:0.85rem 1.25rem;border-radius:8px;font-weight:700;margin-bottom:1rem;"></div>
       <!-- FILTROS -->
@@ -71,11 +71,11 @@
         <div class="card-body">
           <div class="filters-grid">
             <div class="form-group">
-              <label>Buscar</label>
+              <label for="filtroSearch">Buscar</label>
               <input type="text" id="filtroSearch" placeholder="Nombre, cédula o Nº caso..." />
             </div>
             <div class="form-group">
-              <label>Estado</label>
+              <label for="filtroEstado">Estado</label>
               <select id="filtroEstado">
                 <option value="">Todos</option>
                 <option value="Pendiente">Pendiente</option>
@@ -84,7 +84,7 @@
               </select>
             </div>
             <div class="form-group">
-              <label>Área</label>
+              <label for="filtroArea">Área</label>
               <select id="filtroArea">
                 <option value="">Todas</option>
                 <option value="Produccion">Producción</option>
@@ -94,7 +94,7 @@
               </select>
             </div>
             <div class="form-group">
-              <label>Tipo</label>
+              <label for="filtroTipo">Tipo</label>
               <select id="filtroTipo">
                 <option value="">Todos</option>
                 <option value="Peticion">Petición</option>
@@ -104,7 +104,7 @@
               </select>
             </div>
             <div class="form-group">
-              <label>Prioridad</label>
+              <label for="filtroPrioridad">Prioridad</label>
               <select id="filtroPrioridad">
                 <option value="">Todas</option>
                 <option value="Alta">Alta</option>
@@ -113,16 +113,16 @@
               </select>
             </div>
             <div class="form-group">
-              <label>Desde</label>
+              <label for="filtroDesde">Desde</label>
               <input type="date" id="filtroDesde" />
             </div>
             <div class="form-group">
-              <label>Hasta</label>
+              <label for="filtroHasta">Hasta</label>
               <input type="date" id="filtroHasta" />
             </div>
             <div class="form-group">
-              <label>Etiqueta</label>
-              <input type="text" id="filtroTag" placeholder="Buscar por etiqueta..." />
+              <label for="filtroTag">Etiqueta</label>
+              <input type="text" id="filtroTag" placeholder="Etiqueta exacta..." /><label for="filtroOrden">Orden de registro</label><select id="filtroOrden"><option value="desc">Más recientes primero</option><option value="asc">Más antiguos primero</option></select>
             </div>
             <div class="form-group filter-actions">
               <button class="btn btn-primary" id="btnFiltrar"><i class="bi bi-funnel-fill"></i> Filtrar</button>
@@ -168,12 +168,12 @@
     </main>
   </div>
 
-  <script src="js/config.js?v=14"></script>
-  <script src="js/utils.js?v=14"></script>
-  <script src="js/supabase-client.js?v=14"></script>
-  <script src="js/auth.js?v=14"></script>
-  <script src="js/exports.js?v=14"></script>
-  <script src="js/lista-pqrs.js?v=14"></script>
+  <script src="js/config.js?v=15"></script>
+  <script src="js/utils.js?v=15"></script>
+  <script src="js/supabase-client.js?v=15"></script>
+  <script src="js/data.js?v=15"></script>
+  <script src="js/auth.js?v=15"></script>
+  <script src="js/exports.js?v=15"></script>
+  <script src="js/lista-pqrs.js?v=15"></script>
 </body>
 </html>
-

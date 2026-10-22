@@ -4,10 +4,6 @@
 // ============================================================
 
 const CONFIG = {
-  // Supabase - REEMPLAZAR CON VALORES REALES
-  SUPABASE_URL: '[REEMPLAZAR_CON_SUPABASE_URL]',
-  SUPABASE_ANON_KEY: '[REEMPLAZAR_CON_SUPABASE_ANON_KEY]',
-
   // Sistema
   APP_NAME: "Pepo's Cake - PQRS",
   APP_VERSION: '2.0.0',
@@ -22,8 +18,8 @@ const CONFIG = {
 
   // Permisos por rol
   PERMISOS: {
-    cliente: ['crear_pqrs', 'consultar_propios'],
-    empleado: ['crear_pqrs', 'ver_asignados', 'editar_propios', 'exportar'],
+    cliente: [],
+    empleado: [],
     admin: ['crear_pqrs', 'ver_todos', 'editar_todos', 'eliminar', 'exportar', 'configurar_usuarios']
   },
 

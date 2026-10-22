@@ -1,10 +1,7 @@
 {
-  "buildCommand": "",
-  "outputDirectory": ".",
-  "installCommand": "",
+  "buildCommand": "npm run build",
+  "outputDirectory": "dist",
   "framework": null,
-  "env": {},
-  "regions": [],
   "functions": {
     "api/**/*.js": {
       "memory": 1024,
@@ -50,6 +47,11 @@
     {
       "source": "/index",
       "destination": "/index.html",
+      "permanent": false
+    },
+    {
+      "source": "/consulta",
+      "destination": "/consulta.html",
       "permanent": false
     }
   ],
@@ -106,7 +108,7 @@
         },
         {
           "key": "Content-Security-Policy",
-          "value": "default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdn.sheetjs.com https://cdnjs.cloudflare.com https://fonts.googleapis.com; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://fonts.googleapis.com https://fonts.gstatic.com; font-src 'self' https://fonts.gstatic.com https://cdn.jsdelivr.net; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://cdn.jsdelivr.net; img-src 'self' data: https://*.supabase.co;"
+          "value": "default-src 'self'; script-src https://challenges.cloudflare.com 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdn.sheetjs.com https://cdnjs.cloudflare.com https://fonts.googleapis.com; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://fonts.googleapis.com https://fonts.gstatic.com; font-src 'self' https://fonts.gstatic.com https://cdn.jsdelivr.net; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://cdn.jsdelivr.net; img-src 'self' data: https://*.supabase.co; frame-src https://challenges.cloudflare.com; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none';"
         }
       ]
     }

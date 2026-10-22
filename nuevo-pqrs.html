@@ -1,25 +1,25 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="es" class="auth-pending">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <script>(function(){try{if(localStorage.getItem('pqrs_tema')==='dark')document.documentElement.setAttribute('data-theme','dark');}catch(e){}})();</script>
   <title>Nuevo PQRS - Pepo's Cake</title>
-  <link rel="icon" type="image/png" href="img/mascota-pepo.png?v=14" />
-  <link rel="stylesheet" href="css/styles.css?v=14" />
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
+  <link rel="icon" type="image/png" href="img/mascota-pepo.png?v=15" />
+  <link rel="stylesheet" href="css/styles.css?v=15" />
+  <link rel="stylesheet" href="css/bootstrap-icons.css" />
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet">
 </head>
-<body>
+<body><a class="skip-link" href="#contenido">Saltar al contenido</a>
   <!-- SIDEBAR -->
   <div class="sidebar" id="sidebar">
     <div class="sidebar-header">
       <div class="sidebar-logo">
         <img src="img/peposcakecompleto.png" class="sidebar-logo-img" alt="Pepo's Cake PQRS" />
       </div>
-      <button class="sidebar-close" id="sidebarClose"><i class="bi bi-x-lg"></i></button>
+      <button class="sidebar-close" id="sidebarClose" aria-label="Cerrar navegación"><i class="bi bi-x-lg"></i></button>
     </div>
     <nav class="sidebar-nav">
       <a href="dashboard.html" class="nav-item">
@@ -54,11 +54,11 @@
   <!-- MAIN CONTENT -->
   <div class="main-content">
     <header class="topbar">
-      <button class="menu-toggle" id="menuToggle"><i class="bi bi-list"></i></button>
-      <h2 class="page-title">Registrar Nuevo PQRS</h2>
+      <button class="menu-toggle" id="menuToggle" aria-label="Abrir navegación" aria-controls="sidebar" aria-expanded="false"><i class="bi bi-list"></i></button>
+      <h1 class="page-title">Registrar Nuevo PQRS</h1>
     </header>
 
-    <main class="page-body">
+    <main class="page-body" id="contenido"><div class="page-intro"><h2>Registrar solicitud</h2><p>Completa los datos del cliente y describe el caso. Los campos con * son obligatorios.</p></div>
       <div class="card form-card">
         <div class="card-header">
           <h3><i class="bi bi-file-earmark-plus-fill"></i> Información del Caso</h3>
@@ -138,7 +138,7 @@
                 </div>
               </div>
               <div class="form-group">
-                <label>Etiquetas <span style="font-weight:400; color:var(--color-text-muted)">(presiona Enter o coma para agregar)</span></label>
+                <label for="tagInput">Etiquetas <span style="font-weight:400; color:var(--color-text-muted)">(presiona Enter o coma para agregar)</span></label>
                 <div class="tags-container" id="tagsContainer">
                   <input type="text" class="tag-input" id="tagInput" placeholder="Ej: urgente, devolución..." />
                 </div>
@@ -173,11 +173,11 @@
             <div class="form-section">
               <h4 class="form-section-title"><i class="bi bi-images"></i> Evidencias Fotográficas</h4>
               <div class="form-group">
-                <label>Imágenes adjuntas <span style="font-weight:400; color:var(--color-text-muted)">(opcional, máx. 5 imágenes de hasta 5 MB cada una)</span></label>
-                <div class="file-upload-area" id="dropZone">
+                <label for="evidenciasInput">Imágenes adjuntas <span style="font-weight:400; color:var(--color-text-muted)">(opcional, máx. 5 imágenes de hasta 5 MB cada una)</span></label>
+                <div class="file-upload-area" id="dropZone" role="button" tabindex="0" aria-label="Adjuntar imágenes JPG, PNG o WebP">
                   <div class="file-upload-icon"><i class="bi bi-cloud-upload-fill"></i></div>
                   <p class="file-upload-text">Arrastra imágenes aquí o <strong id="filePickerLink">haz clic para seleccionar</strong></p>
-                  <input type="file" id="evidenciasInput" accept="image/*" multiple style="display:none" />
+                  <input type="file" id="evidenciasInput" accept="image/jpeg,image/png,image/webp" multiple style="display:none" />
                 </div>
                 <div class="file-preview-grid" id="filePreviewGrid"></div>
               </div>
@@ -200,11 +200,11 @@
     </main>
   </div>
 
-  <script src="js/config.js?v=14"></script>
-  <script src="js/utils.js?v=14"></script>
-  <script src="js/supabase-client.js?v=14"></script>
-  <script src="js/auth.js?v=14"></script>
-  <script src="js/pqrs.js?v=14"></script>
+  <script src="js/config.js?v=15"></script>
+  <script src="js/utils.js?v=15"></script>
+  <script src="js/supabase-client.js?v=15"></script>
+  <script src="js/data.js?v=15"></script>
+  <script src="js/auth.js?v=15"></script>
+  <script src="js/pqrs.js?v=15"></script>
 </body>
 </html>
-

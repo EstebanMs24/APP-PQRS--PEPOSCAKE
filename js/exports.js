@@ -24,7 +24,7 @@ function exportToExcel(data, filename = 'PQRS_Export') {
 
   function waitXLSX(cb) {
     if (window.XLSX) { cb(); return; }
-    const t = setInterval(() => { if (window.XLSX) { clearInterval(t); cb(); } }, 50);
+    let attempts=0; const t = setInterval(() => { if (window.XLSX) { clearInterval(t); cb(); } else if(++attempts>200){clearInterval(t);Utils.showToast('No se pudo cargar Excel. Revisa la conexión.','error');} }, 50);
   }
 
   waitXLSX(() => {
@@ -115,7 +115,7 @@ function formatFechaExcel(isoString) {
   if (!isoString) return '';
   const d = new Date(isoString);
   return d.toLocaleString('es-CO', {
-    day: '2-digit', month: '2-digit', year: 'numeric',
+    timeZone: 'America/Bogota', day: '2-digit', month: '2-digit', year: 'numeric',
     hour: '2-digit', minute: '2-digit'
   });
 }

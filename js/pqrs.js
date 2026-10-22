@@ -4,6 +4,8 @@
 
 // ---- Tags widget ----
 const tagsArray = [];
+let addExistingTag;
+let editContext=null;
 
 function initTagsWidget() {
   const container = document.getElementById('tagsContainer');
@@ -29,6 +31,7 @@ function initTagsWidget() {
     input.value = '';
   }
 
+  addExistingTag=addTag;
   input.addEventListener('keydown', (e) => {
     if (e.key === 'Enter' || e.key === ',') {
       e.preventDefault();
@@ -63,6 +66,7 @@ function initFileUpload() {
   const previewGrid = document.getElementById('filePreviewGrid');
   if (!dropZone || !fileInput) return;
 
+  dropZone.addEventListener('keydown', e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();fileInput.click();}});
   pickerLink?.addEventListener('click', () => fileInput.click());
   dropZone.addEventListener('click', (e) => {
     if (e.target !== pickerLink) fileInput.click();
@@ -88,7 +92,7 @@ function initFileUpload() {
         Utils.showToast(`"${file.name}" supera 5 MB.`, 'warning');
         return;
       }
-      if (!file.type.startsWith('image/')) return;
+      if (!['image/jpeg','image/png','image/webp'].includes(file.type)) { Utils.showToast('Solo JPG, PNG o WebP.', 'warning'); return; }
       selectedFiles.push(file);
 
       const reader = new FileReader();
@@ -125,106 +129,88 @@ document.addEventListener('DOMContentLoaded', () => {
   initTagsWidget();
   initFileUpload();
 
+
   form.addEventListener('submit', handleSubmit);
+  const editId=new URLSearchParams(location.search).get('id');
+  if(editId){
+    document.getElementById('btnGuardar').disabled=true;
+    withAdmin(async db=>{
+      const {data,error}=await db.from('pqrs').select('*').eq('id',editId).single();
+      if(error||!data||data.eliminado){Utils.showToast('No se pudo abrir el caso para editar.','error');return;}
+      editContext=data;
+      for(const key of ['nombre_cliente','cedula','telefono_cliente','correo_cliente','tipo_solicitud','area_responsable','prioridad','motivo','descripcion','comentarios_adicionales']){const el=document.getElementById(key);if(el)el.value=data[key]||'';}
+      (data.tags||[]).forEach(tag=>addExistingTag(tag));
+      document.querySelector('.page-intro h2').textContent=`Editar ${data.numero_caso}`;
+      document.getElementById('btnGuardar').querySelector('.btn-text').textContent='Guardar cambios';
+      const note=document.createElement('p');note.className='form-hint';note.textContent=`Se conservan ${(data.imagenes||[]).length} evidencias existentes. Puedes adjuntar otras hasta un total de cinco.`;document.getElementById('filePreviewGrid').before(note);
+      document.getElementById('btnGuardar').disabled=false;
+    });
+  }
+
 });
 
+
+let formDirty = false;
+let savedId = null;
+let pendingPayload = null;
+let uploadedPaths = [];
+window.addEventListener('beforeunload', e => { if (formDirty) { e.preventDefault(); e.returnValue = ''; } });
+document.addEventListener('DOMContentLoaded', () => document.getElementById('formNuevoPQRS')?.addEventListener('input', () => { formDirty = true; }));
 async function handleSubmit(e) {
   e.preventDefault();
   const btn = document.getElementById('btnGuardar');
+  if (new URLSearchParams(location.search).has('id') && !editContext) return;
+  if (btn.disabled || savedId) return;
   clearErrors();
-
   const data = getFormData();
-  if (!validateForm(data)) return;
-
+  if (!validateForm(data)) { document.querySelector('[aria-invalid="true"]')?.focus(); return; }
   setLoading(btn, true);
-
-  withSupabase(async (db) => {
-    const user = await getCurrentUser();
-
-    // Resolver creado_por de forma segura: solo asignar el UUID si existe en la tabla usuarios
-    let creadoPor = null;
-    if (user) {
-      // Verificar si ya existe
-      const { data: usuarioExiste } = await db
-        .from('usuarios')
-        .select('id')
-        .eq('id', user.id)
-        .single();
-
-      if (usuarioExiste) {
-        creadoPor = user.id;
-      } else {
-        // Intentar crearlo
-        const emailUser = user.email || '';
-        const { error: insertErr } = await db.from('usuarios').insert({
-          id: user.id,
-          correo: emailUser,
-          nombre: user.user_metadata?.nombre || emailUser.split('@')[0],
-          rol: 'agente'
-        });
-        // Solo usar el id si el insert fue exitoso
-        if (!insertErr) {
-          creadoPor = user.id;
-        }
-        // Si falló (RLS u otro motivo), creadoPor queda null y el PQRS igual se guarda
-      }
-    }
-
-    // Upload images first
-    const imageUrls = [];
-    if (selectedFiles.length > 0) {
+  try {
+    const db = await supabaseReady(), user = await requireAdmin(db);
+    // Keep the same ID and exact payload on ambiguous network retries: no duplicate cases.
+    if ((editContext?.imagenes?.length||0)+selectedFiles.length>5) throw new Error('Máximo cinco evidencias por caso.');
+    if (!pendingPayload) {
       for (const file of selectedFiles) {
-        const ext = file.name.split('.').pop();
-        const path = `${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
-        const { data: uploadData, error: uploadError } = await db.storage
-          .from('evidencias-pqrs')
-          .upload(path, file, { cacheControl: '3600', upsert: false });
-        if (uploadError) {
-          console.warn('Error subiendo imagen:', uploadError.message);
-        } else {
-          const { data: { publicUrl } } = db.storage.from('evidencias-pqrs').getPublicUrl(path);
-          imageUrls.push(publicUrl);
+        const ext = { 'image/jpeg':'jpg','image/png':'png','image/webp':'webp' }[file.type];
+        if (!ext || file.size > CONFIG.MAX_IMAGEN_MB * 1024 * 1024) throw new Error('Usa imágenes JPG, PNG o WebP de hasta 5 MB.');
+        const path = `${user.id}/${crypto.randomUUID()}.${ext}`;
+        const { error } = await db.storage.from('evidencias-pqrs').upload(path,file,{contentType:file.type,upsert:false});
+        if (error) {
+          if (uploadedPaths.length) { const cleanup = await db.storage.from('evidencias-pqrs').remove(uploadedPaths); if (cleanup.error) Utils.showToast('Quedaron archivos sin asociar; informa al administrador.', 'warning'); }
+          uploadedPaths=[]; throw new Error('No se subieron todas las evidencias. El formulario conserva los datos para reintentar.');
         }
+        uploadedPaths.push(path);
       }
+      pendingPayload=editContext ? {...data,imagenes:[...(editContext.imagenes||[]),...uploadedPaths]} : {...data,id:crypto.randomUUID(),numero_caso:'',estado:'Pendiente',creado_por:user.id,imagenes:uploadedPaths};
+      for(const key of ['cedula','telefono_cliente','correo_cliente','comentarios_adicionales']) pendingPayload[key] ||= null;
+    }
+    let { data:nuevo,error } = editContext ? await db.from('pqrs').update(pendingPayload).eq('id',editContext.id).eq('actualizado_en',editContext.actualizado_en).select('id,numero_caso').single() : await db.from('pqrs').insert(pendingPayload).select('id,numero_caso').single();
+    if (!editContext && error?.code === '23505') {
+      const existing = await db.from('pqrs').select('id,numero_caso').eq('id',pendingPayload.id).single();
+      if (existing.data) { nuevo=existing.data; error=null; }
     }
 
-    const payload = {
-      numero_caso: '',
-      nombre_cliente: data.nombre_cliente,
-      cedula: data.cedula || null,
-      telefono_cliente: data.telefono_cliente || null,
-      correo_cliente: data.correo_cliente || null,
-      tipo_solicitud: data.tipo_solicitud,
-      area_responsable: data.area_responsable,
-      prioridad: data.prioridad,
-      motivo: data.motivo,
-      descripcion: data.descripcion,
-      comentarios_adicionales: data.comentarios_adicionales || null,
-      estado: 'Pendiente',
-      tags: data.tags,
-      imagenes: imageUrls,
-      creado_por: creadoPor
-    };
-
-    const { data: nuevo, error } = await db
-      .from('pqrs')
-      .insert(payload)
-      .select()
-      .single();
-
-    if (error) {
-      Utils.showToast('No se pudo guardar el PQRS: ' + error.message, 'error', { duration: 6000 });
-      setLoading(btn, false);
-      return;
+    if (editContext && error?.code === 'PGRST116') {
+      const actual=await db.from('pqrs').select('*').eq('id',editContext.id).single();
+      const same=actual.data && !actual.data.eliminado && Object.entries(pendingPayload).every(([key,value])=>JSON.stringify(actual.data[key])===JSON.stringify(value));
+      if(same){nuevo=actual.data;error=null;}
+      else throw new Error('El caso cambió desde que lo abriste. Conserva tus cambios y recarga antes de volver a guardar.');
     }
+    if (error || !nuevo) {
 
-    Utils.showToast(`PQRS registrado correctamente. N° ${nuevo.numero_caso}`, 'success', {
-      title: '¡PQRS creado!'
-    });
-    setTimeout(() => {
-      window.location.href = `detalle-pqrs.html?id=${nuevo.id}`;
-    }, 1500);
-  });
+      if (error?.code && /^(23|42501)/.test(error.code)) {
+        // Explicit constraint/authorization rejection: payload can safely be corrected.
+        pendingPayload=null;
+        // Keep uploaded objects for reconciliation; do not risk deleting a previously committed attachment.
+        uploadedPaths=[];
+      }
+      throw new Error('No se confirmó el guardado. Reintentar verificará el envío anterior; conserva los datos hasta confirmarlo.');
+    }
+    savedId=nuevo.id; formDirty=false;
+    Utils.showToast(`PQRS guardada: ${nuevo.numero_caso}`);
+    window.location.assign(`detalle-pqrs.html?id=${nuevo.id}`);
+  } catch(error) { Utils.showToast(error.message,'error',{duration:7000}); }
+  finally { setLoading(btn,false); }
 }
 
 function getFormData() {
@@ -289,6 +275,7 @@ function validateForm(data) {
     valid = false;
   }
 
+  if (data.cedula && !/^[0-9 .-]{5,30}$/.test(data.cedula)) { showFieldError('cedula','Revisa el número de documento.'); valid=false; }
   return valid;
 }
 
@@ -296,13 +283,13 @@ function showFieldError(fieldId, message) {
   const el = document.getElementById(`err-${fieldId}`);
   if (el) el.textContent = message;
   const field = document.getElementById(fieldId);
-  if (field) field.style.borderColor = 'var(--color-danger)';
+  if (field) { field.style.borderColor = 'var(--color-danger)'; field.setAttribute('aria-invalid','true'); field.setAttribute('aria-describedby',`err-${fieldId}`); }
 }
 
 function clearErrors() {
   document.querySelectorAll('.field-error').forEach(el => { el.textContent = ''; });
   document.querySelectorAll('input, select, textarea').forEach(el => {
-    el.style.borderColor = '';
+    el.style.borderColor = ''; el.removeAttribute('aria-invalid');
   });
 }
 
@@ -312,5 +299,5 @@ function isValidEmail(email) {
 
 function isValidPhone(phone) {
   if (!phone) return true;
-  return /^\d{7,10}$/.test(phone.replace(/\D/g, ''));
+  return /^[+0-9 ()-]+$/.test(phone) && /^\d{7,15}$/.test(phone.replace(/\D/g, ''));
 }

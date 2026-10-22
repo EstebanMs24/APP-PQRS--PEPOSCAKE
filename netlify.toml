@@ -2,7 +2,9 @@
 # ============================================================
 
 [build]
-  publish = "."
+  publish = "dist"
+  command = "npm run build"
+  functions = "netlify/functions"
 
 # Evitar caché de archivos JS/CSS para siempre servir la versión más reciente
 [[headers]]
@@ -16,6 +18,19 @@
     Cache-Control = "no-cache, no-store, must-revalidate"
   
 # ---- REDIRECTS ----
+[[redirects]]
+  from = "/api/consulta"
+  to = "/.netlify/functions/consulta"
+  status = 200
+[[redirects]]
+  from = "/api/public-config"
+  to = "/.netlify/functions/public-config"
+  status = 200
+[[redirects]]
+  from = "/consulta"
+  to = "/consulta.html"
+  status = 200
+
 # Redirigir rutas directas al index para SPA-like navigation
 [[redirects]]
   from = "/dashboard"
@@ -73,7 +88,7 @@
     X-XSS-Protection = "1; mode=block"
     Referrer-Policy = "strict-origin-when-cross-origin"
     Permissions-Policy = "camera=(), microphone=(), geolocation=()"
-    Content-Security-Policy = "default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdn.sheetjs.com https://cdnjs.cloudflare.com https://fonts.googleapis.com; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://fonts.googleapis.com https://fonts.gstatic.com; font-src 'self' https://fonts.gstatic.com https://cdn.jsdelivr.net; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://cdn.jsdelivr.net; img-src 'self' data: https://*.supabase.co;"
+    Content-Security-Policy = "default-src 'self'; script-src https://challenges.cloudflare.com 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdn.sheetjs.com https://cdnjs.cloudflare.com https://fonts.googleapis.com; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://fonts.googleapis.com https://fonts.gstatic.com; font-src 'self' https://fonts.gstatic.com https://cdn.jsdelivr.net; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://cdn.jsdelivr.net; img-src 'self' data: https://*.supabase.co; frame-src https://challenges.cloudflare.com; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none';"
 
 # Cache para assets estáticos (REMOVIDO: conflictua con no-cache rules arriba)
 # Las reglas de no-cache en líneas 8-16 tienen precedencia

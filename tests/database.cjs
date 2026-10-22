@@ -1,0 +1,99 @@
+const { PGlite } = require('@electric-sql/pglite');
+const fs = require('node:fs');
+const assert = require('node:assert/strict');
+(async () => {
+ const db = new PGlite();
+ await db.exec(`CREATE ROLE anon; CREATE ROLE authenticated; CREATE ROLE service_role BYPASSRLS;
+ CREATE SCHEMA auth; CREATE TABLE auth.users(id uuid PRIMARY KEY);
+ CREATE FUNCTION auth.uid() RETURNS uuid LANGUAGE sql STABLE AS $$ SELECT nullif(current_setting('request.jwt.claim.sub',true),'')::uuid $$;
+ CREATE FUNCTION auth.role() RETURNS text LANGUAGE sql STABLE AS $$ SELECT current_user::text $$;
+ GRANT USAGE ON SCHEMA public,auth TO anon,authenticated,service_role;
+ GRANT EXECUTE ON FUNCTION auth.uid(),auth.role() TO anon,authenticated,service_role;
+ CREATE SCHEMA storage;
+ CREATE TABLE storage.buckets(id text PRIMARY KEY,name text,public boolean,file_size_limit bigint,allowed_mime_types text[]);
+ CREATE TABLE storage.objects(id uuid DEFAULT gen_random_uuid(),bucket_id text,name text);
+ ALTER TABLE storage.objects ENABLE ROW LEVEL SECURITY;
+ GRANT USAGE ON SCHEMA storage TO anon,authenticated;
+ GRANT ALL ON storage.objects TO anon,authenticated;`);
+ await db.exec(fs.readFileSync('supabase/schema.sql','utf8'));
+ const admin='00000000-0000-4000-8000-000000000001', employee='00000000-0000-4000-8000-000000000002', missing='00000000-0000-4000-8000-000000000003';
+ await db.exec(`INSERT INTO auth.users VALUES ('${admin}'),('${employee}'),('${missing}'); INSERT INTO public.usuarios(id,nombre,correo,rol,activo) VALUES ('${admin}','Test admin','admin@example.test','admin',true),('${employee}','Test employee','employee@example.test','empleado',true);`);
+
+ await db.exec(`CREATE POLICY legacy_open ON public.pqrs FOR ALL TO authenticated USING(true) WITH CHECK(true);
+ GRANT ALL ON public.pqrs TO anon,authenticated;
+ CREATE FUNCTION public.consultar_pqrs_publico(text,text) RETURNS text LANGUAGE sql SECURITY DEFINER AS $$ SELECT 'legacy'::text $$;
+ GRANT EXECUTE ON FUNCTION public.consultar_pqrs_publico(text,text) TO anon,authenticated;
+ INSERT INTO storage.buckets(id,name,public) VALUES('evidencias-pqrs','evidencias-pqrs',true);
+ CREATE POLICY legacy_storage_open ON storage.objects FOR ALL TO public USING(true) WITH CHECK(true);`);
+ const migration=fs.readFileSync('supabase/migrations/202610210001_admin_security.sql','utf8');
+
+ // Historical records may contain fields that did not have today's validation rules.
+ await db.exec("INSERT INTO public.pqrs(nombre_cliente,motivo,descripcion,tipo_solicitud,area_responsable,correo_cliente) VALUES('Historical','Legacy','short','Queja','Envios','legacy-email')");
+ const legacyId=(await db.query("SELECT id FROM public.pqrs WHERE motivo='Legacy'")).rows[0].id;
+ await db.exec(migration); await db.exec(migration); // repeatability
+ await db.exec(`SELECT set_config('request.jwt.claim.sub','${admin}',false); SET ROLE authenticated; UPDATE public.pqrs SET eliminado=true WHERE id='${legacyId}'; RESET ROLE;`);
+
+ const asUser=async (role,id='')=>db.exec(`RESET ROLE; SELECT set_config('request.jwt.claim.sub','${id}',false); SET ROLE ${role};`);
+ const denied=async sql=>assert.rejects(db.exec(sql));
+ await asUser('anon');
+ await denied('SELECT * FROM public.pqrs');
+ await denied("SELECT public.consultar_pqrs_publico('x','y')");
+ await denied("INSERT INTO public.pqrs(nombre_cliente) VALUES ('no')");
+ await asUser('authenticated',missing); assert.equal((await db.query('SELECT public.es_admin() ok')).rows[0].ok,false);
+ await asUser('authenticated',employee);
+ assert.equal((await db.query('SELECT * FROM public.pqrs')).rows.length,0);
+ assert.equal((await db.query("UPDATE public.usuarios SET rol='admin' RETURNING id")).rows.length,0);
+ await denied("INSERT INTO public.pqrs(nombre_cliente,motivo,descripcion,tipo_solicitud,area_responsable) VALUES('Test','Test','Long description','Queja','Envios')");
+ await asUser('authenticated',admin);
+ await db.exec("INSERT INTO public.pqrs(nombre_cliente,motivo,descripcion,tipo_solicitud,area_responsable,cedula,telefono_cliente,correo_cliente) VALUES('Test','Test','Long description','Queja','Envios','12345678','3001234567','client@example.test')");
+ let row=(await db.query("SELECT *,actualizado_en::text AS actualizado_en FROM public.pqrs WHERE motivo='Test'")).rows[0];
+ const first=row.numero_caso;
+ assert.match(first,/^PC-\d{4}-\d{5,}$/);
+ const rpc=(status,comment,version=row.actualizado_en)=>db.query('SELECT public.actualizar_estado_pqrs($1,$2,$3,$4,$5)',[row.id,status,comment,'Resolved',version]);
+ await rpc('Resuelto','Valid resolution');
+ assert.equal((await db.query("SELECT count(*)::int n FROM public.seguimiento_pqrs WHERE pqrs_id='"+row.id+"'")).rows[0].n,3);
+ await assert.rejects(rpc('Pendiente','Stale version'));
+ row=(await db.query("SELECT *,actualizado_en::text AS actualizado_en FROM public.pqrs WHERE motivo='Test'")).rows[0];
+ await assert.rejects(rpc('Pendiente',''));
+ assert.equal((await db.query("SELECT estado FROM public.pqrs WHERE motivo='Test'")).rows[0].estado,'Resuelto');
+ await rpc('Pendiente','Reopened');
+ assert.equal((await db.query("SELECT fecha_resolucion FROM public.pqrs WHERE motivo='Test'")).rows[0].fecha_resolucion,null);
+ await denied('DELETE FROM public.pqrs'); await denied('DELETE FROM public.seguimiento_pqrs');
+ await db.exec("UPDATE public.pqrs SET eliminado=true");
+ assert.equal((await db.query('SELECT eliminado_por FROM public.pqrs')).rows[0].eliminado_por,admin);
+ await db.exec("UPDATE public.pqrs SET eliminado=false WHERE motivo='Test'");
+ await db.exec("INSERT INTO storage.objects(bucket_id,name) VALUES ('evidencias-pqrs','test.png')");
+ await asUser('authenticated',employee); assert.equal((await db.query('SELECT * FROM storage.objects')).rows.length,0);
+ assert.equal((await db.query("UPDATE public.pqrs SET estado='Rechazado' RETURNING id")).rows.length,0);
+ await denied("SELECT public.actualizar_estado_pqrs('00000000-0000-4000-8000-000000000010','Pendiente','bypass','',now())");
+ await asUser('anon'); assert.equal((await db.query('SELECT * FROM storage.objects')).rows.length,0);
+ await db.exec('RESET ROLE'); await db.exec("SELECT setval('public.pqrs_consecutivo_seq',99999,true)");
+ await asUser('authenticated',admin);
+ await denied("INSERT INTO public.pqrs(nombre_cliente,motivo,descripcion,tipo_solicitud,area_responsable) VALUES('Test','Test','short','Queja','Envios')");
+ await db.exec("INSERT INTO public.pqrs(nombre_cliente,motivo,descripcion,tipo_solicitud,area_responsable) VALUES('Test','Test','Long description','Queja','Envios')");
+ assert.ok((await db.query('SELECT numero_caso FROM public.pqrs')).rows.some(x=>Number(x.numero_caso.split('-')[2])>=100000));
+ await db.exec('RESET ROLE');
+ await db.exec(fs.readFileSync('supabase/migrations/202610210003_dashboard.sql','utf8'));
+ await asUser('authenticated',admin); assert.equal((await db.query('SELECT public.resumen_pqrs() AS s')).rows[0].s.total,2);
+ await asUser('authenticated',employee); await denied('SELECT public.resumen_pqrs()');
+ await db.exec('RESET ROLE');
+ if(fs.existsSync('supabase/migrations/202610210002_public_lookup.sql')) {
+  await db.exec(fs.readFileSync('supabase/migrations/202610210002_public_lookup.sql','utf8'));
+  await asUser('anon'); await denied("SELECT * FROM public.consultar_pqrs_servidor('numero','x','x','x')");
+  await asUser('service_role');
+  for(const [criterion,value] of [['numero',first],['cedula','12.345.678'],['telefono','300 123 4567']]) {
+   const result=await db.query('SELECT * FROM public.consultar_pqrs_servidor($1,$2,$3,$4)',[criterion,value,first,'client@example.test']);
+   assert.equal(result.rows.length,1); assert.equal('nombre_cliente' in result.rows[0],false); assert.equal('solucion' in result.rows[0],false);
+  }
+  assert.equal((await db.query('SELECT * FROM public.consultar_pqrs_servidor($1,$2,$3,$4)',['cedula','12345678',first,'wrong@example.test'])).rows.length,0);
+  for(let i=0;i<10;i++) assert.equal((await db.query("SELECT public.consumir_consulta(repeat('a',64),repeat('b',64)) ok")).rows[0].ok,true);
+  assert.equal((await db.query("SELECT public.consumir_consulta(repeat('a',64),repeat('b',64)) ok")).rows[0].ok,false);
+ }
+
+ await asUser('authenticated',admin);
+ await db.exec("INSERT INTO public.pqrs(nombre_cliente,motivo,descripcion,tipo_solicitud,area_responsable) SELECT 'Test','Bulk','Long description','Queja','Envios' FROM generate_series(1,1005)");
+ assert.equal((await db.query('SELECT public.resumen_pqrs() AS s')).rows[0].s.total,1007);
+ await db.exec('RESET ROLE');await db.exec(`UPDATE public.usuarios SET activo=false WHERE id='${admin}'`);
+ await asUser('authenticated',admin);assert.equal((await db.query('SELECT * FROM public.pqrs')).rows.length,0);
+ await db.close(); console.log('PASS: fresh schema, repeatable migration, role denial, admin writes, atomic history, concurrency version, archive, private storage, sequence >99999; public lookup/rate limit when installed.');
+})().catch(e=>{console.error(e.message,e.code);process.exit(1)});

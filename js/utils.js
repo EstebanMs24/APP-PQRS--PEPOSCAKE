@@ -3,11 +3,12 @@
 // ============================================================
 
 const Utils = {
+  fechaBogota(iso) { return new Intl.DateTimeFormat('en-CA',{timeZone:'America/Bogota',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date(iso)); },
   // Fechas y formatos
   formatFecha(isoString) {
     if (!isoString) return '—';
     return new Date(isoString).toLocaleDateString('es-CO', {
-      day: '2-digit', month: '2-digit', year: 'numeric',
+      timeZone: 'America/Bogota', day: '2-digit', month: '2-digit', year: 'numeric',
       hour: '2-digit', minute: '2-digit'
     });
   },
@@ -15,20 +16,20 @@ const Utils = {
   formatFechaCorta(isoString) {
     if (!isoString) return '—';
     return new Date(isoString).toLocaleDateString('es-CO', {
-      day: '2-digit', month: 'long', year: 'numeric'
+      timeZone: 'America/Bogota', day: '2-digit', month: 'long', year: 'numeric'
     });
   },
 
   formatHora(isoString) {
     if (!isoString) return '—';
     return new Date(isoString).toLocaleTimeString('es-CO', {
-      hour: '2-digit', minute: '2-digit'
+      timeZone: 'America/Bogota', hour: '2-digit', minute: '2-digit'
     });
   },
 
   // HTML escaping
   escapeHtml(str) {
-    if (!str) return '—';
+    if (str === null || str === undefined || str === '') return '—';
     return String(str)
       .replace(/&/g, '&amp;')
       .replace(/</g, '&lt;')
@@ -76,20 +77,20 @@ const Utils = {
 
   // Badges HTML
   badgeEstado(estado) {
-    return `<span class="badge badge-${estado}">${Utils.labelEstado(estado)}</span>`;
+    return `<span class="badge badge-${Utils.escapeHtml(estado)}">${Utils.escapeHtml(Utils.labelEstado(estado))}</span>`;
   },
 
   badgeTipo(tipo) {
-    return `<span class="badge badge-${tipo}">${Utils.labelTipo(tipo)}</span>`;
+    return `<span class="badge badge-${Utils.escapeHtml(tipo)}">${Utils.escapeHtml(Utils.labelTipo(tipo))}</span>`;
   },
 
   badgeArea(area) {
-    return `<span class="badge badge-area">${Utils.labelArea(area)}</span>`;
+    return `<span class="badge badge-area">${Utils.escapeHtml(Utils.labelArea(area))}</span>`;
   },
 
   badgePrioridad(prioridad) {
     const p = prioridad || 'Media';
-    return `<span class="badge badge-prio-${p}">${Utils.labelPrioridad(p)}</span>`;
+    return `<span class="badge badge-prio-${Utils.escapeHtml(p)}">${Utils.labelPrioridad(p)}</span>`;
   },
 
   // Notificaciones — Toast premium (usa estructura .toast-container/.toast del CSS)
@@ -97,7 +98,7 @@ const Utils = {
     let cont = document.querySelector('.toast-container');
     if (!cont) {
       cont = document.createElement('div');
-      cont.className = 'toast-container';
+      cont.className = 'toast-container'; cont.setAttribute('role','status'); cont.setAttribute('aria-live','polite');
       document.body.appendChild(cont);
     }
     return cont;
@@ -116,7 +117,7 @@ const Utils = {
     };
     const titulo = opciones.title || titulosDefault[tipo] || titulosDefault.info;
     const toast = document.createElement('div');
-    toast.className = `toast toast-${tipo}`;
+    toast.className = `toast toast-${Utils.escapeHtml(tipo)}`;
     toast.innerHTML = `
       <span class="toast-icon"><i class="bi ${iconos[tipo] || iconos.info}"></i></span>
       <div class="toast-content">
@@ -196,13 +197,13 @@ const Utils = {
 
   renderTrendSVG(meses) {
     const W = 600, H = 180;
-    const padL = 30, padR = 20, padT = 30, padB = 35;
+    const padL = 40, padR = 50, padT = 30, padB = 35;
     const chartW = W - padL - padR;
     const chartH = H - padT - padB;
     const maxVal = Math.max(...meses.map(m => m.total), 1);
     const n = meses.length;
 
-    const xs = meses.map((_, i) => padL + (i / (n - 1)) * chartW);
+    const xs = meses.map((_, i) => padL + (n===1 ? 0.5 : i / (n - 1)) * chartW);
     const ys = meses.map(m => padT + chartH - (m.total / maxVal) * chartH);
 
     const linePoints = xs.map((x, i) => `${x},${ys[i]}`).join(' ');
@@ -244,13 +245,6 @@ const Utils = {
   },
 
   // Utilidades
-  generarNumeroCaso() {
-    const hoy = new Date();
-    const año = hoy.getFullYear();
-    const mes = String(hoy.getMonth() + 1).padStart(2, '0');
-    const random = Math.floor(Math.random() * 10000).toString().padStart(5, '0');
-    return `PC-${año}-${random}`;
-  },
 
   calcularDiasTranscurridos(fechaInicio) {
     const inicio = new Date(fechaInicio);
@@ -350,7 +344,9 @@ const Utils = {
       document.body.appendChild(overlay);
       requestAnimationFrame(() => overlay.classList.add('visible'));
 
+      const previousFocus=document.activeElement; let settled=false;
       const cerrar = (resultado) => {
+        if(settled)return;settled=true;previousFocus?.focus();
         overlay.classList.remove('visible');
         document.removeEventListener('keydown', onKey);
         setTimeout(() => overlay.remove(), 200);
@@ -358,14 +354,14 @@ const Utils = {
       };
       const onKey = (e) => {
         if (e.key === 'Escape') cerrar(false);
-        if (e.key === 'Enter')  cerrar(true);
+        if(e.key==='Tab'){const buttons=overlay.querySelectorAll('button');if(e.shiftKey&&document.activeElement===buttons[0]){e.preventDefault();buttons[1].focus();}else if(!e.shiftKey&&document.activeElement===buttons[1]){e.preventDefault();buttons[0].focus();}}
       };
 
       document.addEventListener('keydown', onKey);
       overlay.querySelector('[data-modal="ok"]').addEventListener('click', () => cerrar(true));
       overlay.querySelector('[data-modal="cancel"]').addEventListener('click', () => cerrar(false));
       overlay.addEventListener('click', (e) => { if (e.target === overlay) cerrar(false); });
-      setTimeout(() => overlay.querySelector('[data-modal="ok"]').focus(), 50);
+      setTimeout(() => overlay.querySelector('[data-modal="cancel"]').focus(), 50);
     });
   },
 

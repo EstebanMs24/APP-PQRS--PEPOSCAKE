@@ -4,9 +4,10 @@
 
 // Guarda los datos del último reporte generado para usarlos en el PDF
 let ultimoReporteData = [];
+let reportRequest=0;
 
 document.addEventListener('DOMContentLoaded', () => {
-  withSupabase(async (db) => {
+  withAdmin(async (db) => {
     await generarReporte(db, null, null);
 
     document.getElementById('btnGenerarReporte').addEventListener('click', async () => {
@@ -15,9 +16,9 @@ document.addEventListener('DOMContentLoaded', () => {
       const hasta = document.getElementById('reporteHasta').value || null;
       btn.disabled = true;
       btn.innerHTML = '<i class="bi bi-hourglass-split"></i> Generando...';
-      await generarReporte(db, desde, hasta);
+      const success = await generarReporte(db, desde, hasta);
       btn.disabled = false;
-      btn.innerHTML = '<i class="bi bi-check-circle-fill"></i> Generado';
+      btn.textContent = success ? 'Generado' : 'Reintentar';
       setTimeout(() => { btn.innerHTML = '<i class="bi bi-funnel-fill"></i> Generar'; }, 2000);
     });
 
@@ -35,10 +36,8 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('btnExportExcel').addEventListener('click', async () => {
       const desde = document.getElementById('reporteDesde').value || null;
       const hasta = document.getElementById('reporteHasta').value || null;
-      const { data: todos } = await db.from('pqrs').select('*')
-        .or('eliminado.is.null,eliminado.eq.false')
-        .order('fecha_registro', { ascending: false });
-      const data = filtrarPorRango(todos || [], desde, hasta);
+      let data;
+      try { data=await Data.all(db,'*',{desde,hasta}); } catch { Utils.showToast('No se pudo exportar. Reduce el rango o reintenta.','error'); return; }
       if (!data.length) {
         Utils.showToast('No hay PQRS en el rango seleccionado.', 'warning');
         return;
@@ -56,32 +55,13 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 });
 
-// Devuelve la fecha local (YYYY-MM-DD) de un timestamp, según la zona del navegador
-function fechaLocalYMD(iso) {
-  const d = new Date(iso);
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, '0');
-  const dd = String(d.getDate()).padStart(2, '0');
-  return `${y}-${m}-${dd}`;
-}
-
-// Filtra por rango de fechas comparando la fecha LOCAL (evita desfases por UTC)
-function filtrarPorRango(data, desde, hasta) {
-  if (!desde && !hasta) return data;
-  return data.filter(row => {
-    const f = fechaLocalYMD(row.fecha_registro);
-    if (desde && f < desde) return false;
-    if (hasta && f > hasta) return false;
-    return true;
-  });
-}
-
 async function generarReporte(db, desde, hasta) {
-  const { data: todos, error } = await db
-    .from('pqrs').select('*').or('eliminado.is.null,eliminado.eq.false');
-  if (error || !todos) return;
-
-  const data = filtrarPorRango(todos, desde, hasta);
+  const request=++reportRequest;
+  let data;
+  if(desde && hasta && desde>hasta) { Utils.showToast('Revisa el rango de fechas.','warning');return false; }
+  try { data=await Data.all(db,'id,estado,area_responsable,tipo_solicitud,fecha_registro',{desde,hasta}); }
+  catch { ultimoReporteData=[]; ['rTotal','rPendiente','rProceso','rResuelto','rTasa'].forEach(id=>setText(id,'?'));Utils.showToast('No se pudo generar el reporte. Reduce el rango o reintenta.','error');return false; }
+  if(request!==reportRequest)return false;
   ultimoReporteData = data;
 
   // KPIs
@@ -119,7 +99,7 @@ async function generarReporte(db, desde, hasta) {
   const porMes = {};
   data.forEach(row => {
     const d = new Date(row.fecha_registro);
-    const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+    const key = Utils.fechaBogota(row.fecha_registro).slice(0,7);
     if (!porMes[key]) porMes[key] = { total: 0, Pendiente: 0, En_proceso: 0, Resuelto: 0 };
     porMes[key].total++;
     porMes[key][row.estado] = (porMes[key][row.estado] || 0) + 1;
@@ -172,6 +152,7 @@ async function generarReporte(db, desde, hasta) {
       }).join('');
     }
   }
+  return true;
 }
 
 function groupBy(arr, key) {

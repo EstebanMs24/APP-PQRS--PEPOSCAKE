@@ -1,3 +1,4 @@
+let listRequest=0;
 // ============================================================
 // LISTA-PQRS.JS - Listado con filtros y paginación server-side
 // ============================================================
@@ -18,21 +19,21 @@ let filtros = {
 };
 
 document.addEventListener('DOMContentLoaded', () => {
-  withSupabase(async (db) => {
+  withAdmin(async (db) => {
     currentDb = db;
 
     // Verificar parámetro de eliminación
     const params = new URLSearchParams(window.location.search);
     if (params.get('eliminado') === '1') {
       viendoEliminados = true;
-      Utils.showToast('PQRS eliminado y movido a la papelera.');
+      Utils.showToast('PQRS archivado.');
       const btn = document.getElementById('btnVerEliminados');
       if (btn) {
         btn.innerHTML = '<i class="bi bi-list-check"></i> Ver Activos';
         btn.className = 'btn btn-warning btn-sm';
       }
       const titulo = document.querySelector('.page-title');
-      if (titulo) titulo.textContent = 'PQRS Eliminados';
+      if (titulo) titulo.textContent = 'PQRS archivados';
       history.replaceState(null, '', 'lista-pqrs.html');
     }
 
@@ -51,12 +52,12 @@ function bindVerEliminados() {
     viendoEliminados = !viendoEliminados;
     btn.innerHTML = viendoEliminados
       ? '<i class="bi bi-list-check"></i> Ver Activos'
-      : '<i class="bi bi-trash"></i> Ver Eliminados';
+      : '<i class="bi bi-trash"></i> Ver archivados';
     btn.className = viendoEliminados ? 'btn btn-warning btn-sm' : 'btn btn-outline btn-sm';
 
     const titulo = document.querySelector('.page-title');
     if (titulo) {
-      titulo.textContent = viendoEliminados ? 'PQRS Eliminados' : 'Todos los PQRS';
+      titulo.textContent = viendoEliminados ? 'PQRS archivados' : 'Todos los PQRS';
     }
 
     await cargarPagina(currentDb, 1);
@@ -64,38 +65,25 @@ function bindVerEliminados() {
 }
 
 async function cargarPagina(db, page = 1) {
+  const request = ++listRequest;
+  document.getElementById('tbodyLista').innerHTML='<tr><td colspan="10" role="status">Cargando solicitudes…</td></tr>';
   const offset = (page - 1) * CONFIG.ITEMS_POR_PAGINA;
 
   // Construir query base
   let query = db.from('pqrs')
     .select('id, numero_caso, nombre_cliente, cedula, tipo_solicitud, area_responsable, prioridad, estado, motivo, fecha_registro, tags, eliminado, eliminado_en, eliminado_por', { count: 'exact' })
-    .order('fecha_registro', { ascending: false })
+    .order('fecha_registro', { ascending: document.getElementById('filtroOrden')?.value === 'asc' }).order('id')
     .range(offset, offset + CONFIG.ITEMS_POR_PAGINA - 1);
 
-  // Filtro de eliminados
-  if (viendoEliminados) {
-    query = query.eq('eliminado', true);
-  } else {
-    query = query.or('eliminado.is.null,eliminado.eq.false');
-  }
-
-  // Aplicar filtros
-  if (filtros.search) {
-    query = query.or(`numero_caso.ilike.%${filtros.search}%,nombre_cliente.ilike.%${filtros.search}%,cedula.ilike.%${filtros.search}%`);
-  }
-  if (filtros.estado) query = query.eq('estado', filtros.estado);
-  if (filtros.area) query = query.eq('area_responsable', filtros.area);
-  if (filtros.tipo) query = query.eq('tipo_solicitud', filtros.tipo);
-  if (filtros.prioridad) query = query.eq('prioridad', filtros.prioridad);
-  if (filtros.desde) query = query.gte('fecha_registro', filtros.desde + 'T00:00:00');
-  if (filtros.hasta) query = query.lte('fecha_registro', filtros.hasta + 'T23:59:59');
-
+  query = Data.filters(query, filtros, viendoEliminados);
   const { data, count, error } = await query;
 
+  if (request !== listRequest) return;
   if (error) {
-    console.error('Error cargando PQRS:', error);
+    console.warn('Error cargando PQRS:', error.code || 'connection');
     Utils.showToast('Error al cargar datos', 'error');
-    renderTabla([]);
+    document.getElementById('tbodyLista').innerHTML='<tr><td colspan="10" role="alert">No se pudieron cargar los casos. Vuelve a aplicar los filtros.</td></tr>';
+    document.getElementById('pagination').replaceChildren();
     return;
   }
 
@@ -116,6 +104,7 @@ function bindFilters() {
   const btnLimpiar = document.getElementById('btnLimpiar');
   const filtroSearch = document.getElementById('filtroSearch');
 
+  document.getElementById('filtroOrden')?.addEventListener('change',aplicarFiltros);
   btnFiltrar?.addEventListener('click', aplicarFiltros);
   btnLimpiar?.addEventListener('click', limpiarFiltros);
 
@@ -135,12 +124,14 @@ async function aplicarFiltros() {
   filtros.prioridad = document.getElementById('filtroPrioridad')?.value || '';
   filtros.desde = document.getElementById('filtroDesde')?.value || '';
   filtros.hasta = document.getElementById('filtroHasta')?.value || '';
+  filtros.tag = document.getElementById('filtroTag')?.value.trim() || '';
+  if (filtros.desde && filtros.hasta && filtros.desde > filtros.hasta) { Utils.showToast('La fecha inicial debe ser anterior a la final.','warning'); return; }
 
   await cargarPagina(currentDb, 1);
 }
 
 async function limpiarFiltros() {
-  ['filtroSearch', 'filtroEstado', 'filtroArea', 'filtroTipo', 'filtroPrioridad', 'filtroDesde', 'filtroHasta'].forEach(id => {
+  ['filtroSearch', 'filtroEstado', 'filtroArea', 'filtroTipo', 'filtroPrioridad', 'filtroDesde', 'filtroHasta', 'filtroTag'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.value = '';
   });
@@ -159,7 +150,7 @@ function renderTabla(data) {
       : 'No se encontraron PQRS con estos filtros. Prueba ajustando la búsqueda.';
     tbody.innerHTML = `<tr><td colspan="10">
       <div class="empty-mascot">
-        <img src="img/mascota-pepo.png?v=14" alt="Mascota Pepo's Cake" />
+        <img src="img/mascota-pepo.png?v=15" alt="Mascota Pepo's Cake" />
         <span class="empty-title">Nada por aquí</span>
         <p>${msg}</p>
       </div>
@@ -175,10 +166,10 @@ function renderTabla(data) {
     const tagsBadges = (row.tags || []).map(t => `<span class="tag-badge">${Utils.escapeHtml(t)}</span>`).join('');
 
     const accion = viendoEliminados
-      ? `<button class="btn btn-outline btn-sm" onclick="restaurarPQRS('${row.id}')" title="Restaurar"><i class="bi bi-arrow-counterclockwise"></i> Restaurar</button>`
+      ? `<button class="btn btn-outline btn-sm" data-restore="${row.id}" title="Restaurar"><i class="bi bi-arrow-counterclockwise"></i> Restaurar</button>`
       : `<div style="display:flex; gap:0.35rem; flex-wrap:wrap;">
           <a href="detalle-pqrs.html?id=${row.id}" class="btn btn-outline btn-sm" title="Ver detalles"><i class="bi bi-eye"></i> Ver</a>
-          <button class="btn btn-outline btn-sm" style="color:#D64045" title="Eliminar" onclick="eliminarDesdeLista('${row.id}', '${Utils.escapeHtml(row.numero_caso)}')"><i class="bi bi-trash"></i></button>
+          <button class="btn btn-outline btn-sm" style="color:#D64045" title="Archivar" data-archive="${row.id}" data-case="${Utils.escapeHtml(row.numero_caso)}"><i class="bi bi-trash"></i></button>
         </div>`;
 
     // Clase de fila por estado (tinte + borde izquierdo); rojo si SLA vencido
@@ -194,12 +185,14 @@ function renderTabla(data) {
       <td data-label="Tipo">${Utils.badgeTipo(row.tipo_solicitud)}</td>
       <td data-label="Prioridad">${Utils.badgePrioridad(row.prioridad)}</td>
       <td data-label="Área">${Utils.labelArea(row.area_responsable)}</td>
-      <td data-label="Motivo" style="max-width:150px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap" title="${Utils.escapeHtml(row.motivo)}">${Utils.truncate(row.motivo, 30)}</td>
+      <td data-label="Motivo" style="max-width:150px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap" title="${Utils.escapeHtml(row.motivo)}">${Utils.escapeHtml(Utils.truncate(row.motivo, 30))}</td>
       <td data-label="SLA" style="text-align:center">${slaBadge}</td>
       <td data-label="Estado">${Utils.badgeEstado(row.estado)}</td>
       <td data-label="Acciones">${accion}</td>
     </tr>`;
   }).join('');
+  tbody.querySelectorAll('[data-archive]').forEach(btn=>btn.addEventListener('click',()=>eliminarDesdeLista(btn.dataset.archive,btn.dataset.case)));
+  tbody.querySelectorAll('[data-restore]').forEach(btn=>btn.addEventListener('click',()=>restaurarPQRS(btn.dataset.restore)));
 }
 
 function renderPaginacion(total, page) {
@@ -239,52 +232,39 @@ function bindExport() {
   if (btn) {
     btn.addEventListener('click', async () => {
       if (typeof exportToExcel !== 'function') return;
-      let query = currentDb.from('pqrs')
-        .select('*');
 
-      if (viendoEliminados) {
-        query = query.eq('eliminado', true);
-      } else {
-        query = query.or('eliminado.is.null,eliminado.eq.false');
-      }
-
-      if (filtros.search) query = query.or(`numero_caso.ilike.%${filtros.search}%,nombre_cliente.ilike.%${filtros.search}%`);
-      if (filtros.estado) query = query.eq('estado', filtros.estado);
-      if (filtros.area) query = query.eq('area_responsable', filtros.area);
-      if (filtros.tipo) query = query.eq('tipo_solicitud', filtros.tipo);
-      if (filtros.desde) query = query.gte('fecha_registro', filtros.desde + 'T00:00:00');
-      if (filtros.hasta) query = query.lte('fecha_registro', filtros.hasta + 'T23:59:59');
-
-      const { data } = await query;
-      if (data) exportToExcel(data, 'PQRS_Pepos_Cake');
+      if(btn.disabled)return;btn.disabled=true;
+      try { const data=await Data.all(currentDb,'*',filtros,viendoEliminados);exportToExcel(data,'PQRS_Pepos_Cake'); }
+      catch { Utils.showToast('No se pudo exportar. Reduce el rango o revisa la conexión.','error'); }
+      finally { btn.disabled=false; }
     });
   }
 }
 
-function eliminarDesdeLista(id, numeroCaso) {
-  const confirmar = confirm(`¿Eliminar ${numeroCaso}?\n\nEl caso se moverá a la papelera. Podrás restaurarlo desde "Ver Eliminados".`);
+async function eliminarDesdeLista(id, numeroCaso) {
+  const confirmar = await Utils.confirmModal({title:'Archivar solicitud',message:`¿Archivar ${numeroCaso}? Puedes restaurarlo desde el listado.`,confirmText:'Archivar',variant:'danger'});
   if (!confirmar) return;
-  withSupabase(async (db) => {
+  withAdmin(async (db) => {
     const { data: { user } } = await db.auth.getUser();
     const eliminadoPor = user?.email || user?.id || 'Desconocido';
     const { error } = await db
       .from('pqrs')
       .update({ eliminado: true, eliminado_en: new Date().toISOString(), eliminado_por: eliminadoPor })
-      .eq('id', id);
+      .eq('id', id).select('id').single();
     if (error) { alert('Error al eliminar: ' + error.message); return; }
-    mostrarBannerExito(`✅ ${numeroCaso} eliminado y movido a la papelera.`);
+    Utils.showToast(`✅ ${numeroCaso} archivado.`);
     await cargarPagina(db, 1);
   });
 }
 
-function restaurarPQRS(id) {
-  const confirmar = confirm('¿Restaurar este PQRS? Volverá a aparecer en la lista activa.');
+async function restaurarPQRS(id) {
+  const confirmar = await Utils.confirmModal({title:'Restaurar solicitud',message:'El caso volverá a aparecer en la lista activa.',confirmText:'Restaurar'});
   if (!confirmar) return;
-  withSupabase(async (db) => {
+  withAdmin(async (db) => {
     const { error } = await db
       .from('pqrs')
-      .update({ eliminado: false, eliminado_en: null })
-      .eq('id', id);
+      .update({ eliminado: false, eliminado_en: null, eliminado_por: null })
+      .eq('id', id).select('id').single();
     if (error) { alert('Error al restaurar: ' + error.message); return; }
     await cargarPagina(db, 1);
   });

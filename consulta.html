@@ -1,160 +1,18 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <script>(function(){try{if(localStorage.getItem('pqrs_tema')==='dark')document.documentElement.setAttribute('data-theme','dark');}catch(e){}})();</script>
-  <title>Consultar PQRS — Pepo's Cake</title>
-  <link rel="icon" type="image/png" href="img/mascota-pepo.png?v=14" />
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
-  <link rel="stylesheet" href="css/styles.css?v=14" />
-</head>
-<body>
-  <div class="consulta-wrap">
-    <div class="consulta-card consulta-card--public">
-      <!-- Hero de marca -->
-      <div class="consulta-hero">
-        <img src="img/mascota-pepo.png?v=14" alt="Mascota chef de Pepo's Cake" class="consulta-hero-mascot" />
-        <div class="consulta-hero-name">Pepo's Cake</div>
-        <div class="consulta-hero-sub">Consulta tu PQRS</div>
-      </div>
-
-      <div class="consulta-body">
-        <p class="consulta-subtitle">Ingresa el número de caso y el correo con el que se registró tu solicitud.</p>
-
-        <form class="consulta-form consulta-form--stacked" id="formConsulta" autocomplete="off">
-          <div class="form-group">
-            <label for="inputCaso">Número de caso</label>
-            <input type="text" id="inputCaso" placeholder="Ej: PC-2025-00123" maxlength="30" required />
-          </div>
-          <div class="form-group">
-            <label for="inputCorreo">Tu correo electrónico</label>
-            <input type="email" id="inputCorreo" placeholder="cliente@ejemplo.com" maxlength="200" required />
-          </div>
-          <button type="submit" class="btn btn-primary btn-block">
-            <i class="bi bi-search"></i> Consultar estado
-          </button>
-        </form>
-
-        <div class="error-box" id="errorBox">
-          <i class="bi bi-exclamation-triangle-fill"></i>
-          <span id="errorMsg">No se encontró ningún PQRS con esos datos.</span>
-        </div>
-
-        <div class="result-box" id="resultBox">
-          <div class="result-header">
-            <i class="bi bi-receipt"></i>
-            <span id="resNumero">PC-2025-00000</span>
-          </div>
-          <div class="result-body">
-            <div class="result-row">
-              <span class="result-label">Estado</span>
-              <span class="result-value"><span class="badge-estado" id="resEstado"></span></span>
-            </div>
-            <div class="result-row">
-              <span class="result-label">Tipo</span>
-              <span class="result-value" id="resTipo">—</span>
-            </div>
-            <div class="result-row">
-              <span class="result-label">Área</span>
-              <span class="result-value" id="resArea">—</span>
-            </div>
-            <div class="result-row">
-              <span class="result-label">Registrado</span>
-              <span class="result-value" id="resFecha">—</span>
-            </div>
-            <div class="result-row" id="rowSolucion" style="display:none">
-              <span class="result-label">Respuesta</span>
-              <span class="result-value" id="resSolucion" style="max-width:280px;word-break:break-word;">—</span>
-            </div>
-          </div>
-        </div>
-
-        <div class="back-link">
-          <a href="index.html"><i class="bi bi-arrow-left"></i> Volver al inicio</a>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <script src="js/config.js?v=14"></script>
-  <script src="js/utils.js?v=14"></script>
-  <script src="js/supabase-client.js?v=14"></script>
-  <script>
-    const formConsulta = document.getElementById('formConsulta');
-    const errorBox     = document.getElementById('errorBox');
-    const errorMsg     = document.getElementById('errorMsg');
-    const resultBox    = document.getElementById('resultBox');
-
-    function showError(msg) {
-      errorMsg.textContent = msg;
-      errorBox.classList.add('visible');
-      resultBox.classList.remove('visible');
-    }
-
-    formConsulta.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      errorBox.classList.remove('visible');
-      resultBox.classList.remove('visible');
-
-      const numero = document.getElementById('inputCaso').value.trim().toUpperCase();
-      const correo = document.getElementById('inputCorreo').value.trim().toLowerCase();
-      if (!numero || !correo) return;
-
-      const btn = formConsulta.querySelector('button[type="submit"]');
-      btn.disabled = true;
-      btn.innerHTML = '<i class="bi bi-hourglass-split"></i> Buscando...';
-
-      try {
-        await withSupabase(async (db) => {
-          // Consulta segura vía función SECURITY DEFINER: valida número + correo
-          // en el servidor y solo devuelve campos no sensibles (sin cédula ni
-          // teléfono). La tabla pqrs ya no es legible públicamente.
-          const { data, error } = await db.rpc('consultar_pqrs_publico', {
-            p_numero: numero,
-            p_correo: correo
-          });
-
-          const caso = Array.isArray(data) && data.length ? data[0] : null;
-          if (error || !caso) {
-            showError('No encontramos un PQRS con ese número y correo. Verifica los datos e intenta de nuevo.');
-            return;
-          }
-
-          document.getElementById('resNumero').textContent = caso.numero_caso;
-          document.getElementById('resTipo').textContent = getLabelTipo(caso.tipo_solicitud);
-          document.getElementById('resArea').textContent = getLabelArea(caso.area_responsable);
-
-          const estadoEl = document.getElementById('resEstado');
-          estadoEl.textContent = getLabelEstado(caso.estado);
-          estadoEl.className = 'badge-estado badge-' + caso.estado;
-
-          if (caso.fecha_registro) {
-            document.getElementById('resFecha').textContent = new Date(caso.fecha_registro)
-              .toLocaleDateString('es-CO', { day: '2-digit', month: 'long', year: 'numeric' });
-          }
-
-          const rowSolucion = document.getElementById('rowSolucion');
-          if (caso.solucion && caso.estado === 'Resuelto') {
-            document.getElementById('resSolucion').textContent = caso.solucion;
-            rowSolucion.style.display = 'flex';
-          } else {
-            rowSolucion.style.display = 'none';
-          }
-
-          resultBox.classList.add('visible');
-        });
-      } catch (err) {
-        showError('Error al consultar. Por favor intenta más tarde.');
-        console.error(err);
-      } finally {
-        btn.disabled = false;
-        btn.innerHTML = '<i class="bi bi-search"></i> Consultar estado';
-      }
-    });
-  </script>
-</body>
-</html>
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="referrer" content="no-referrer"><meta name="robots" content="noindex,nofollow"><title>Consulta de PQRS — Pepo’s Cake</title><link rel="icon" href="img/peposcake.png"><link rel="stylesheet" href="css/styles.css?v=15"></head>
+<body class="public-page"><main class="consulta-wrap"><section class="consulta-card consulta-card--public" aria-labelledby="consultaTitle">
+<header class="consulta-hero"><img src="img/mascota-pepo.png" alt="Pepo’s Cake" class="consulta-hero-mascot"><p class="eyebrow">Seguimiento de solicitudes</p><h1 id="consultaTitle">Consulta de PQRS</h1></header>
+<div class="consulta-body"><p class="consulta-subtitle">Conoce el estado de tu solicitud. Ten a mano el número de caso y el correo registrado.</p>
+<form id="formConsulta" class="consulta-form consulta-form--stacked">
+<div class="form-group"><label for="criterio">Buscar por</label><select id="criterio"><option value="numero">Número de PQRS</option><option value="cedula">Cédula</option><option value="telefono">Teléfono</option></select></div>
+<div class="form-group"><label id="valorLabel" for="valor">Número de PQRS</label><input id="valor" maxlength="40" required placeholder="PC-2026-00042" aria-describedby="consultaAyuda"></div>
+<div class="form-group" id="numeroGroup" hidden><label for="numero">Número de PQRS para verificar</label><input id="numero" maxlength="40" placeholder="PC-2026-00042"></div>
+<div class="form-group"><label for="correo">Correo registrado en el caso</label><input id="correo" type="email" maxlength="200" autocomplete="email" required></div>
+<p class="form-hint" id="consultaAyuda">Para proteger tus datos, cada consulta verifica un único caso. Si no tienes los datos, contacta a quien registró la solicitud.</p>
+<div id="captcha" aria-label="Verificación de seguridad"></div>
+<button type="submit" class="btn btn-primary btn-block" id="consultarBtn" disabled>Consultar estado</button>
+</form>
+<p id="consultaMensaje" role="status" aria-live="polite"></p>
+<section id="resultado" class="public-result" hidden tabindex="-1" aria-label="Resultado de consulta"><h2 id="resNumero"></h2><dl id="resDatos"></dl></section>
+<p class="privacy-note">Esta consulta muestra únicamente información general de seguimiento. Los datos personales, comentarios y evidencias se mantienen privados.</p>
+</div></section></main><script src="js/config.js?v=15"></script><script src="js/utils.js?v=15"></script><script src="js/consulta.js?v=15"></script></body></html>

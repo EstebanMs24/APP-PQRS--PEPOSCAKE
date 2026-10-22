@@ -13,7 +13,7 @@ document.addEventListener('DOMContentLoaded', () => {
     return;
   }
 
-  withSupabase(async (db) => {
+  withAdmin(async (db) => {
     await cargarDetalle(db, id);
 
     // Botón volver
@@ -44,7 +44,12 @@ async function cargarDetalle(db, id) {
     return;
   }
 
+
   casoActual = data;
+  let editLink=document.getElementById('editarCaso');
+  if(!editLink){editLink=document.createElement('a');editLink.id='editarCaso';editLink.className='btn btn-outline btn-sm';editLink.textContent='Editar caso';document.querySelector('.topbar-actions').prepend(editLink);}
+  editLink.href=`nuevo-pqrs.html?id=${data.id}`;editLink.hidden=!!data.eliminado;
+
 
   // Clonar template
   const template = document.getElementById('templateDetalle');
@@ -120,17 +125,30 @@ async function cargarDetalle(db, id) {
     const gridEv = document.getElementById('d-evidencias');
     if (cardEv && gridEv) {
       cardEv.style.display = '';
-      gridEv.innerHTML = data.imagenes.map(url => `
-        <a href="${url}" target="_blank" rel="noopener noreferrer">
-          <img src="${url}" alt="Evidencia fotográfica" class="evidencia-img" />
-        </a>
-      `).join('');
+
+      gridEv.replaceChildren();
+      for (const reference of data.imagenes) {
+        try {
+          const url=await Data.evidenceUrl(db,reference);
+          const a=document.createElement('a'), img=document.createElement('img');
+          a.href=url; a.target='_blank'; a.rel='noopener noreferrer';
+          img.src=url; img.alt='Evidencia privada'; img.className='evidencia-img'; img.loading='lazy';
+          a.append(img); gridEv.append(a);
+          a.addEventListener('click',async event=>{
+            event.preventDefault();
+            const tab=window.open('about:blank','_blank'); if(tab)tab.opener=null;
+            try { const fresh=await Data.evidenceUrl(db,reference); if(tab)tab.location.replace(fresh);else{a.href=fresh;Utils.showToast('Permite abrir ventanas o abre el enlace en una nueva pestaña.','info');} }
+            catch { tab?.close();Utils.showToast('No se pudo abrir la evidencia. Recarga el caso.','error'); }
+          });
+        } catch { const message=document.createElement('p'); message.textContent='No se pudo cargar una evidencia. Recarga para reintentar.'; gridEv.append(message); }
+      }
     }
   }
 
   // Establecer estado actual en el select
   const selectEstado = document.getElementById('nuevoEstado');
   if (selectEstado) selectEstado.value = data.estado;
+  if(document.getElementById('textoSolucion'))document.getElementById('textoSolucion').value=data.solucion||'';
 
   // Mostrar/ocultar campo solución si estado = Resuelto
   if (selectEstado) {
@@ -153,6 +171,7 @@ async function cargarDetalle(db, id) {
     formEstado.addEventListener('submit', (e) => actualizarEstado(e, db, id));
   }
 
+  if(data.eliminado) { document.getElementById('formActualizarEstado')?.setAttribute('hidden','');document.getElementById('btnEliminar')?.setAttribute('hidden',''); }
   // Cargar historial
   await cargarHistorial(db, id);
 }
@@ -161,6 +180,7 @@ async function actualizarEstado(e, db, id) {
   e.preventDefault();
   const btn = document.getElementById('btnActualizar');
   const alertEl = document.getElementById('alertEstado');
+  if (btn.disabled) return;
 
   const nuevoEstado = document.getElementById('nuevoEstado').value;
   const comentario = document.getElementById('textoComentario').value.trim();
@@ -186,45 +206,18 @@ async function actualizarEstado(e, db, id) {
   btn.textContent = '⏳ Guardando...';
   alertEl.style.display = 'none';
 
-  const user = await getCurrentUser();
 
-  // Actualizar el PQRS
-  const updatePayload = { estado: nuevoEstado };
-  if (nuevoEstado === 'Resuelto') {
-    updatePayload.solucion = solucion;
-    updatePayload.fecha_resolucion = new Date().toISOString();
-  }
-
-  const { error: errUpdate } = await db
-    .from('pqrs')
-    .update(updatePayload)
-    .eq('id', id);
-
-  if (errUpdate) {
-    alertEl.className = 'alert alert-error';
-    alertEl.textContent = 'Error al actualizar: ' + errUpdate.message;
-    alertEl.style.display = 'block';
-    btn.disabled = false;
-    btn.textContent = '💾 Actualizar Estado';
-    return;
-  }
-
-  // Insertar seguimiento
-  const nombreUsuario = document.getElementById('userName')?.textContent || 'Agente';
-  await db.from('seguimiento_pqrs').insert({
-    pqrs_id: id,
-    comentario: comentario,
-    estado_nuevo: nuevoEstado,
-    creado_por: user ? user.id : null,
-    nombre_usuario: nombreUsuario
-  });
-
-  alertEl.className = 'alert alert-success';
-  alertEl.textContent = '✅ Estado actualizado correctamente.';
-  alertEl.style.display = 'block';
-
-  // Recargar página para ver cambios
-  setTimeout(() => window.location.reload(), 1200);
+  try {
+    await requireAdmin(db);
+    const { data, error } = await db.rpc('actualizar_estado_pqrs', {
+      p_id:id,p_estado:nuevoEstado,p_comentario:comentario,p_solucion:solucion,p_version:casoActual.actualizado_en
+    });
+    if(error || !data) throw new Error(error?.code==='40001' ? 'El caso cambió. Recarga antes de guardar.' : 'No se pudo guardar el estado y el seguimiento.');
+    Utils.showToast('Estado y seguimiento guardados.');
+    await cargarDetalle(db,id);
+  } catch(error) {
+    alertEl.className='alert alert-error'; alertEl.textContent=error.message; alertEl.style.display='block';
+  } finally { btn.disabled=false; btn.textContent='Actualizar estado'; }
 }
 
 async function cargarHistorial(db, id) {
@@ -237,7 +230,8 @@ async function cargarHistorial(db, id) {
     .eq('pqrs_id', id)
     .order('creado_en', { ascending: false });
 
-  if (error || !data || data.length === 0) {
+  if (error) { timeline.textContent='No se pudo cargar el historial. Recarga para reintentar.'; return; }
+  if (!data || data.length === 0) {
     timeline.innerHTML = '<div class="text-muted p-3 text-center">Sin comentarios de seguimiento aún.</div>';
     return;
   }
@@ -307,6 +301,7 @@ function generarPDF(caso) {
 
   // ---- SECCIONES ----
   function seccion(titulo, campos) {
+    if(y>255){doc.addPage();y=margen;}
     doc.setFillColor(78, 205, 196);
     doc.rect(margen, y, ancho, 7, 'F');
     doc.setFontSize(9);
@@ -323,8 +318,8 @@ function generarPDF(caso) {
       doc.text(label + ':', margen, y);
       doc.setFont('helvetica', 'normal');
       const lines = doc.splitTextToSize(String(value || '—'), ancho - 45);
-      doc.text(lines, margen + 42, y);
-      y += lines.length * 5 + 2;
+      for(const line of lines){if(y>275){doc.addPage();y=margen;}doc.text(line,margen+42,y);y+=5;}
+      y += 2;
     });
     y += 4;
   }
@@ -372,49 +367,16 @@ function generarPDF(caso) {
 // ============================================================
 // ELIMINAR PQRS (soft delete)
 // ============================================================
-async function eliminarPQRS(db, id) {
-  const confirmar = confirm(
-    '¿Estás seguro de que deseas ELIMINAR este PQRS?\n\nEl caso se moverá a la papelera y podrás restaurarlo desde "Ver Eliminados".'
-  );
-  if (!confirmar) return;
 
-  const btn = document.getElementById('btnEliminar');
-  if (btn) { btn.disabled = true; btn.textContent = '⏳ Eliminando...'; }
-
-  const { data: { user } } = await db.auth.getUser();
-  const eliminadoPor = user?.email || user?.id || 'Desconocido';
-
-  const { error } = await db
-    .from('pqrs')
-    .update({
-      eliminado: true,
-      eliminado_en: new Date().toISOString(),
-      eliminado_por: eliminadoPor,
-    })
-    .eq('id', id);
-
-  if (error) {
-    alert('❌ Error al eliminar: ' + error.message);
-    if (btn) { btn.disabled = false; btn.textContent = '🗑️ Eliminar'; }
-    return;
-  }
-
-  // Verificar que realmente se guardó (RLS puede bloquear sin error)
-  const { data: verificacion } = await db
-    .from('pqrs').select('eliminado').eq('id', id).single();
-
-  if (!verificacion || verificacion.eliminado !== true) {
-    alert('❌ No se pudo eliminar. Puede ser un problema de permisos en la base de datos.\n\nAsegúrate de haber ejecutado el SQL de permisos en Supabase.');
-    if (btn) { btn.disabled = false; btn.textContent = '🗑️ Eliminar'; }
-    return;
-  }
-
-  if (btn) { btn.textContent = '✅ Eliminado'; btn.className = 'btn btn-success btn-sm'; }
-  const toast = document.createElement('div');
-  toast.style.cssText = 'position:fixed;top:1.5rem;left:50%;transform:translateX(-50%);background:#2e7d32;color:#fff;padding:0.9rem 2rem;border-radius:8px;font-weight:700;font-size:1rem;z-index:9999;box-shadow:0 4px 16px rgba(0,0,0,0.25);';
-  toast.textContent = '✅ PQRS eliminado y movido a la papelera.';
-  document.body.appendChild(toast);
-  setTimeout(() => { window.location.href = 'lista-pqrs.html?eliminado=1'; }, 1800);
+async function eliminarPQRS(db,id) {
+ if(!await Utils.confirmModal({title:'Archivar solicitud',message:'El caso se moverá al archivo. Puedes restaurarlo desde el listado.',confirmText:'Archivar',variant:'danger'}))return;
+ const btn=document.getElementById('btnEliminar');if(btn.disabled)return;btn.disabled=true;
+ try {
+  await requireAdmin(db);
+  const {data,error}=await db.from('pqrs').update({eliminado:true}).eq('id',id).select('id').single();
+  if(error||!data)throw new Error('No se pudo confirmar el archivado.');
+  Utils.showToast('Solicitud archivada.');window.location.assign('lista-pqrs.html?eliminado=1');
+ }catch(error){Utils.showToast(error.message,'error');}finally{btn.disabled=false;}
 }
 
 // ---- Anillo SLA del hero ----
@@ -426,12 +388,11 @@ function renderSlaRing(data) {
     el.innerHTML = `<span class="sla-ring-cap"><i class="bi bi-check-circle-fill"></i> ${labelEstado(data.estado)}</span>`;
     return;
   }
-  const horas = (CONFIG.SLA_HORAS && CONFIG.SLA_HORAS[data.tipo_solicitud]) || 120;
-  const transcurridas = (Date.now() - new Date(data.fecha_registro).getTime()) / 3600000;
-  const restantes = horas - transcurridas;
-  const vencido = restantes <= 0;
-  const frac = vencido ? 1 : Math.max(0, Math.min(1, restantes / horas));
-  const color = vencido ? '#D64045' : (restantes < 24 ? '#E0A82E' : '#7DCFB6');
+
+  const sla=Utils.calcularEstadoSLA(data);if(!sla){el.textContent='Sin plazo definido';return;}
+  const horas=sla.horasTotales,restantes=sla.horasRestantes,vencido=sla.nivel==='vencido';
+  const frac=vencido?1:Math.max(0,Math.min(1,restantes/horas));
+  const color=vencido?'#D64045':sla.nivel==='warning'?'#E0A82E':'#7DCFB6';
   const r = 42, cx = 48, cy = 48, circ = 2 * Math.PI * r;
   const dash = circ * frac;
   const texto = vencido ? 'Vencido' : (restantes < 24 ? `${Math.ceil(restantes)}h` : `${Math.ceil(restantes / 24)}d`);

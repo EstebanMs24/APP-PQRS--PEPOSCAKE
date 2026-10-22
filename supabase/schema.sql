@@ -72,7 +72,7 @@ BEGIN
   -- nextval() es atómico en PostgreSQL: seguro bajo concurrencia
   consecutivo := nextval('pqrs_consecutivo_seq');
   -- Usar módulo para mantener el número dentro de 5 dígitos (00000-99999)
-  numero := 'PC-' || año || '-' || LPAD((consecutivo % 100000)::TEXT, 5, '0');
+  numero := 'PC-' || año || '-' || LPAD(consecutivo::TEXT, GREATEST(5, length(consecutivo::TEXT)), '0');
   NEW.numero_caso := numero;
   RETURN NEW;
 END;
@@ -100,134 +100,8 @@ BEFORE UPDATE ON pqrs
 FOR EACH ROW
 EXECUTE FUNCTION actualizar_timestamp();
 
--- ============================================================
--- ROW LEVEL SECURITY (RLS) - Seguridad a nivel de fila
--- ============================================================
-ALTER TABLE pqrs ENABLE ROW LEVEL SECURITY;
-ALTER TABLE seguimiento_pqrs ENABLE ROW LEVEL SECURITY;
-ALTER TABLE usuarios ENABLE ROW LEVEL SECURITY;
 
--- Política: usuarios autenticados pueden leer todos los PQRS
-CREATE POLICY "Leer pqrs autenticado" ON pqrs
-  FOR SELECT USING (auth.role() = 'authenticated');
-
--- Política: usuarios autenticados pueden insertar PQRS
-CREATE POLICY "Insertar pqrs autenticado" ON pqrs
-  FOR INSERT WITH CHECK (auth.role() = 'authenticated');
-
--- Política: usuarios autenticados pueden actualizar PQRS
-CREATE POLICY "Actualizar pqrs autenticado" ON pqrs
-  FOR UPDATE USING (auth.role() = 'authenticated');
-
--- Política: usuarios autenticados pueden leer seguimiento
-CREATE POLICY "Leer seguimiento autenticado" ON seguimiento_pqrs
-  FOR SELECT USING (auth.role() = 'authenticated');
-
--- Política: usuarios autenticados pueden insertar seguimiento
-CREATE POLICY "Insertar seguimiento autenticado" ON seguimiento_pqrs
-  FOR INSERT WITH CHECK (auth.role() = 'authenticated');
-
--- Política: usuarios autenticados pueden leer usuarios
-CREATE POLICY "Leer usuarios autenticado" ON usuarios
-  FOR SELECT USING (auth.role() = 'authenticated');
-
--- Política: solo admin puede cambiar roles
-CREATE POLICY "Solo admin puede cambiar roles" ON usuarios
-  FOR UPDATE USING (
-    auth.role() = 'authenticated' AND
-    (SELECT rol FROM usuarios WHERE id = auth.uid()) = 'admin'
-  );
-
--- ============================================================
--- CONSULTA PÚBLICA SEGURA (portal consulta.html)
--- ============================================================
--- IMPORTANTE: NO usar una política SELECT pública (USING (true)) sobre pqrs.
--- Eso expondría TODOS los datos de clientes (cédula, teléfono, correo) a
--- cualquiera con la anon key. En su lugar el portal público usa esta función
--- SECURITY DEFINER que valida número de caso + correo en el servidor y solo
--- devuelve campos NO sensibles (sin cédula ni teléfono) de un único caso.
-
-DROP POLICY IF EXISTS "Consulta pública por número de caso" ON pqrs;
-
-CREATE OR REPLACE FUNCTION public.consultar_pqrs_publico(p_numero TEXT, p_correo TEXT)
-RETURNS TABLE (
-  numero_caso       VARCHAR,
-  estado            VARCHAR,
-  tipo_solicitud    VARCHAR,
-  area_responsable  VARCHAR,
-  motivo            VARCHAR,
-  fecha_registro    TIMESTAMPTZ,
-  fecha_resolucion  TIMESTAMPTZ,
-  solucion          TEXT
-)
-LANGUAGE sql
-STABLE
-SECURITY DEFINER
-SET search_path = public
-AS $$
-  SELECT p.numero_caso, p.estado, p.tipo_solicitud, p.area_responsable,
-         p.motivo, p.fecha_registro, p.fecha_resolucion, p.solucion
-  FROM public.pqrs p
-  WHERE upper(trim(p.numero_caso))  = upper(trim(p_numero))
-    AND lower(trim(p.correo_cliente)) = lower(trim(p_correo))
-    AND COALESCE(p.eliminado, false) = false
-  LIMIT 1;
-$$;
-
--- Restringir y otorgar ejecución solo a los roles esperados
-REVOKE ALL ON FUNCTION public.consultar_pqrs_publico(TEXT, TEXT) FROM PUBLIC;
-GRANT EXECUTE ON FUNCTION public.consultar_pqrs_publico(TEXT, TEXT) TO anon, authenticated;
-
--- ============================================================
--- DATOS INICIALES DE PRUEBA
--- ============================================================
--- Nota: Los usuarios reales se crean desde Supabase Auth.
--- Esta tabla 'usuarios' es para datos adicionales del perfil.
-
--- Insertar usuario administrador de ejemplo (reemplaza el UUID con el de tu auth.users)
--- INSERT INTO usuarios (id, nombre, correo, rol) VALUES
---   ('00000000-0000-0000-0000-000000000001', 'Administrador', 'admin@peposcake.com', 'admin');
-
--- ============================================================
--- NUEVAS COLUMNAS (ejecutar en Supabase SQL Editor si la tabla ya existe)
--- ============================================================
-
--- Soft delete: columnas para papelera de reciclaje
-ALTER TABLE pqrs ADD COLUMN IF NOT EXISTS eliminado      BOOLEAN DEFAULT FALSE;
-ALTER TABLE pqrs ADD COLUMN IF NOT EXISTS eliminado_en   TIMESTAMP WITH TIME ZONE;
-ALTER TABLE pqrs ADD COLUMN IF NOT EXISTS eliminado_por  VARCHAR(200);
-
--- Índice para mejorar performance del filtro de eliminados
-CREATE INDEX IF NOT EXISTS idx_pqrs_eliminado ON pqrs(eliminado);
-
--- Etiquetas personalizables por caso
-ALTER TABLE pqrs ADD COLUMN IF NOT EXISTS tags TEXT[] DEFAULT '{}';
-
--- URLs de imágenes de evidencia (subidas a Supabase Storage)
-ALTER TABLE pqrs ADD COLUMN IF NOT EXISTS imagenes TEXT[] DEFAULT '{}';
-
--- ============================================================
--- STORAGE para evidencias fotográficas
--- Nota: Ejecutar estos comandos desde Supabase SQL Editor
--- ============================================================
-
--- Crear bucket público para evidencias
-INSERT INTO storage.buckets (id, name, public)
-VALUES ('evidencias-pqrs', 'evidencias-pqrs', true)
-ON CONFLICT (id) DO NOTHING;
-
--- Permitir subida de archivos a usuarios autenticados
-CREATE POLICY "Upload evidencias autenticado" ON storage.objects
-  FOR INSERT WITH CHECK (
-    bucket_id = 'evidencias-pqrs' AND auth.role() = 'authenticated'
-  );
-
--- Permitir lectura pública de evidencias
-CREATE POLICY "Leer evidencias publico" ON storage.objects
-  FOR SELECT USING (bucket_id = 'evidencias-pqrs');
-
--- Permitir eliminar evidencias a usuarios autenticados
-CREATE POLICY "Eliminar evidencias autenticado" ON storage.objects
-  FOR DELETE USING (
-    bucket_id = 'evidencias-pqrs' AND auth.role() = 'authenticated'
-  );
+ALTER TABLE public.pqrs ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.usuarios ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.seguimiento_pqrs ENABLE ROW LEVEL SECURITY;
+-- Fresh installations only: provision a real administrator from SQL, then apply migrations in order.
