@@ -11,14 +11,17 @@
 
 El navegador usa SDK/exportadores simulados; PostgreSQL se prueba por separado. Las cuentas reales de los tres lectores se comprobarán cuando estén creadas.
 
-## Comprobación con cuentas reales
-
 ## Servicios reales comprobados
 
 - Supabase: aplicadas las migraciones `internal_roles_and_private_evidence` e `internal_dashboard_summary`.
 - Cinco PQRS, un perfil administrador y ocho evidencias conservados. Bucket privado; lectura anónima y RPC pública antigua denegadas.
 - Prueba transaccional en Supabase: administrador crea, resuelve y archiva con historial; lector lee casos/evidencias/resumen y no puede insertar, actualizar, borrar casos, cambiar roles o usar RPC de actualización. Se revirtieron todos los datos de prueba. La secuencia puede dejar huecos.
 - Vista previa Netlify: SDK real carga, páginas protegidas redirigen al login, endpoints retirados devuelven 410 y archivos privados no se publican. API REST anónima deniega acceso a las tres tablas y a la RPC antigua.
+- Producción publicada por Git desde `1b0bcb0`: despliegue `6ae60aa9c67d367db2b6b7d2`, estado ready. La misma comprobación HTTP/navegador pasó en https://peposcake-pqrs.netlify.app/. Escaneo de secretos de Netlify sin coincidencias.
+
+Las versiones registradas por Supabase son `20261031153254` (archivo local 001) y `20261031153306` (archivo local 003). No volver a aplicar automáticamente los archivos locales con `db push` sin reconciliar ese historial.
+
+El asesor de Supabase mantiene avisos sobre funciones SECURITY DEFINER: `es_admin`/`es_lector` solo devuelven el permiso del usuario actual (false para anónimos), y la RPC de estado comprueba el administrador internamente. No devuelven datos por omitir RLS. La protección de contraseñas filtradas de Auth sigue desactivada; revisar su disponibilidad en el plan antes de habilitarla: https://supabase.com/docs/guides/auth/password-security#password-strength-and-leaked-password-protection.
 
 ## Comprobación con cuentas reales
 
