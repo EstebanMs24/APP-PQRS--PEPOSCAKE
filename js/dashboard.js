@@ -3,7 +3,7 @@
 // ============================================================
 
 document.addEventListener('DOMContentLoaded', () => {
-  withAdmin(async (db) => {
+  withReader(async (db) => {
     await cargarEstadisticas(db);
     await cargarCasosRecientes(db);
     await cargarPrioritarios(db);

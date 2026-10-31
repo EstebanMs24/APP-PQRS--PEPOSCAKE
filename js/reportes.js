@@ -7,7 +7,7 @@ let ultimoReporteData = [];
 let reportRequest=0;
 
 document.addEventListener('DOMContentLoaded', () => {
-  withAdmin(async (db) => {
+  withReader(async (db) => {
     await generarReporte(db, null, null);
 
     document.getElementById('btnGenerarReporte').addEventListener('click', async () => {

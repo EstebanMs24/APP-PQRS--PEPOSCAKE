@@ -19,7 +19,7 @@ let filtros = {
 };
 
 document.addEventListener('DOMContentLoaded', () => {
-  withAdmin(async (db) => {
+  withReader(async (db) => {
     currentDb = db;
 
     // Verificar parámetro de eliminación
@@ -165,7 +165,9 @@ function renderTabla(data) {
       : Utils.renderSlaBadge(row);
     const tagsBadges = (row.tags || []).map(t => `<span class="tag-badge">${Utils.escapeHtml(t)}</span>`).join('');
 
-    const accion = viendoEliminados
+    const accion = !tieneRol('admin')
+      ? `<a href="detalle-pqrs.html?id=${row.id}" class="btn btn-outline btn-sm">Ver</a>`
+      : viendoEliminados
       ? `<button class="btn btn-outline btn-sm" data-restore="${row.id}" title="Restaurar"><i class="bi bi-arrow-counterclockwise"></i> Restaurar</button>`
       : `<div style="display:flex; gap:0.35rem; flex-wrap:wrap;">
           <a href="detalle-pqrs.html?id=${row.id}" class="btn btn-outline btn-sm" title="Ver detalles"><i class="bi bi-eye"></i> Ver</a>

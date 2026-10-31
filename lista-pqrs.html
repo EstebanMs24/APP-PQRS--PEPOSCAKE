@@ -25,7 +25,7 @@
       <a href="dashboard.html" class="nav-item">
         <span class="nav-icon"><i class="bi bi-speedometer2"></i></span> Dashboard
       </a>
-      <a href="nuevo-pqrs.html" class="nav-item">
+      <a href="nuevo-pqrs.html" data-rol-minimo="admin" class="nav-item">
         <span class="nav-icon"><i class="bi bi-plus-circle-fill"></i></span> Nuevo PQRS
       </a>
       <a href="lista-pqrs.html" class="nav-item active">
@@ -57,9 +57,9 @@
       <button class="menu-toggle" id="menuToggle" aria-label="Abrir navegación" aria-controls="sidebar" aria-expanded="false"><i class="bi bi-list"></i></button>
       <h1 class="page-title">Todos los PQRS</h1>
       <div class="topbar-actions">
-        <button class="btn btn-outline btn-sm" id="btnVerEliminados" data-rol-minimo="admin"><i class="bi bi-trash3"></i> Ver archivados</button>
-        <button class="btn btn-success btn-sm" id="btnExportExcel" data-rol-minimo="admin"><i class="bi bi-file-earmark-excel-fill"></i> Excel</button>
-        <a href="nuevo-pqrs.html" class="btn btn-primary btn-sm"><i class="bi bi-plus-circle-fill"></i> Nuevo</a>
+        <button class="btn btn-outline btn-sm" id="btnVerEliminados"><i class="bi bi-trash3"></i> Ver archivados</button>
+        <button class="btn btn-success btn-sm" id="btnExportExcel"><i class="bi bi-file-earmark-excel-fill"></i> Excel</button>
+        <a href="nuevo-pqrs.html" data-rol-minimo="admin" class="btn btn-primary btn-sm"><i class="bi bi-plus-circle-fill"></i> Nuevo</a>
       </div>
     </header>
 

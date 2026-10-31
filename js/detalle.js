@@ -13,7 +13,7 @@ document.addEventListener('DOMContentLoaded', () => {
     return;
   }
 
-  withAdmin(async (db) => {
+  withReader(async (db) => {
     await cargarDetalle(db, id);
 
     // Botón volver
@@ -48,7 +48,7 @@ async function cargarDetalle(db, id) {
   casoActual = data;
   let editLink=document.getElementById('editarCaso');
   if(!editLink){editLink=document.createElement('a');editLink.id='editarCaso';editLink.className='btn btn-outline btn-sm';editLink.textContent='Editar caso';document.querySelector('.topbar-actions').prepend(editLink);}
-  editLink.href=`nuevo-pqrs.html?id=${data.id}`;editLink.hidden=!!data.eliminado;
+  editLink.href=`nuevo-pqrs.html?id=${data.id}`;editLink.hidden=!!data.eliminado || !tieneRol('admin');
 
 
   // Clonar template
@@ -171,7 +171,8 @@ async function cargarDetalle(db, id) {
     formEstado.addEventListener('submit', (e) => actualizarEstado(e, db, id));
   }
 
-  if(data.eliminado) { document.getElementById('formActualizarEstado')?.setAttribute('hidden','');document.getElementById('btnEliminar')?.setAttribute('hidden',''); }
+  updateRoleBasedElements();
+  if(data.eliminado || !tieneRol('admin')) { document.getElementById('formActualizarEstado')?.setAttribute('hidden','');document.getElementById('btnEliminar')?.setAttribute('hidden',''); }
   // Cargar historial
   await cargarHistorial(db, id);
 }

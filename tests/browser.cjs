@@ -63,24 +63,17 @@ function mock({role,fixture}) {
  await page.goto(base+'/usuarios.html');await page.waitForSelector('.select-rol');assert.equal(await page.isDisabled('.select-rol'),true);
  await page.click('#logoutBtn');await page.waitForURL('**/index.html');
  await page.fill('#email','admin@example.test');await page.fill('#password','local-test');await page.click('#loginBtn');await page.waitForURL('**/dashboard.html');
- for(const role of [null,'empleado']){const t=await ctx(role);await t.page.goto(base+'/dashboard.html');await t.page.waitForURL('**/index.html?acceso=1');await t.context.close();}
- const pub=await ctx(null,{width:390,height:844});
- await pub.page.route('**/api/public-config',route=>route.fulfill({json:{siteKey:'test'}}));
- await pub.page.route('**/api/consulta',route=>route.fulfill({json:{caso:{numero_caso:fixture.numero_caso,estado:'Pendiente',tipo_solicitud:'Queja',area_responsable:'Envios',fecha_registro:fixture.fecha_registro,actualizado_en:fixture.actualizado_en}}}));
- await pub.page.goto(base+'/consulta.html');await pub.page.waitForFunction(()=>!document.getElementById('consultarBtn').disabled);
- for(const [criterion,value] of [['numero',fixture.numero_caso],['cedula',fixture.cedula],['telefono',fixture.telefono_cliente]]){
-  await pub.page.selectOption('#criterio',criterion);await pub.page.fill('#valor',value);if(criterion!=='numero')await pub.page.fill('#numero',fixture.numero_caso);await pub.page.fill('#correo',fixture.correo_cliente);await pub.page.click('#consultarBtn');await pub.page.waitForSelector('#resultado:visible');assert.equal(await pub.page.textContent('#resNumero'),fixture.numero_caso);
- }
- assert.equal(await pub.page.locator('a[href="index.html"]').count(),0);
- assert.equal(await pub.page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
- await pub.page.screenshot({path:'artifacts/consulta-mobile.png',fullPage:true});
-
- await pub.page.unroute('**/api/consulta');
- await pub.page.route('**/api/consulta',route=>route.fulfill({json:{caso:null}}));
- await pub.page.click('#consultarBtn');await pub.page.waitForFunction(()=>document.getElementById('consultaMensaje').textContent.includes('No encontramos'));assert.equal(await pub.page.isVisible('#resultado'),false);
- await pub.page.unroute('**/api/consulta');
- await pub.page.route('**/api/consulta',route=>route.fulfill({status:429,json:{error:'Demasiados intentos. Espera 15 minutos.'}}));
- await pub.page.click('#consultarBtn');await pub.page.waitForFunction(()=>document.getElementById('consultaMensaje').textContent.includes('Demasiados intentos'));
+ for(const role of [null,'cliente']){const t=await ctx(role);await t.page.goto(base+'/dashboard.html');await t.page.waitForURL('**/index.html?acceso=1');await t.context.close();}
+ const reader=await ctx('empleado');
+ await reader.page.goto(base+'/dashboard.html');await reader.page.waitForFunction(()=>document.getElementById('statTotal').textContent==='1');
+ assert.equal(await reader.page.isVisible('a[href="nuevo-pqrs.html"] >> nth=0'),false);
+ await reader.page.goto(base+'/lista-pqrs.html');await reader.page.waitForSelector('#tbodyLista a');assert.equal(await reader.page.locator('[data-archive],[data-restore]').count(),0);
+ await reader.page.click('#tbodyLista a');await reader.page.waitForSelector('#d-nombre_cliente');
+ assert.equal(await reader.page.textContent('#d-cedula'),fixture.cedula);
+ assert.equal(await reader.page.isVisible('#editarCaso'),false);assert.equal(await reader.page.isVisible('#formActualizarEstado'),false);assert.equal(await reader.page.isVisible('#btnEliminar'),false);
+ await reader.page.goto(base+'/reportes.html');await reader.page.waitForFunction(()=>document.getElementById('rTotal').textContent==='1');
+ for(const file of ['nuevo-pqrs','usuarios']){await reader.page.goto(base+'/'+file+'.html');await reader.page.waitForURL('**/dashboard.html');}
+ const pub=await ctx(null);await pub.page.goto(base+'/consulta.html');await pub.page.waitForURL('**/index.html');
  const mobile=await ctx('admin',{width:390,height:844});
  for(const file of ['dashboard','lista-pqrs','nuevo-pqrs','reportes','usuarios','detalle-pqrs']){
   await mobile.page.goto(base+'/'+file+'.html'+(file==='detalle-pqrs'?'?id='+fixture.id:''));await mobile.page.waitForFunction(()=>!document.documentElement.classList.contains('auth-pending'));
@@ -99,5 +92,5 @@ function mock({role,fixture}) {
  await mobile.page.click('#menuToggle');assert.equal(await mobile.page.getAttribute('#menuToggle','aria-expanded'),'true');await mobile.page.keyboard.press('Escape');assert.equal(await mobile.page.getAttribute('#menuToggle','aria-expanded'),'false');
  await mobile.page.setViewportSize({width:320,height:740});assert.equal(await mobile.page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
  assert.deepEqual(errors,[]);
- await browser.close();server.kill();console.log('PASS: browser login/logout, role redirects, create/edit/reload/state/archive/restore, filters, export wiring, three public searches, six mobile screens and JS errors. Backend and export libraries mocked; SQL tested separately.');
+ await browser.close();server.kill();console.log('PASS: browser login/logout, role redirects, create/edit/reload/state/archive/restore, filters, export wiring, reader access and denied write controls, retired public lookup, six mobile screens and JS errors. Backend and export libraries mocked; SQL tested separately.');
 })().catch(error=>{console.error(error);server.kill();process.exit(1)});

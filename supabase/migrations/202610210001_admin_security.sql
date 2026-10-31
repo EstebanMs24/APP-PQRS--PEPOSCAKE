@@ -14,12 +14,19 @@ DROP TRIGGER IF EXISTS trigger_numero_caso ON public.pqrs;
 ALTER TABLE public.pqrs ALTER COLUMN numero_caso TYPE varchar(40);
 ALTER TABLE public.seguimiento_pqrs ADD COLUMN IF NOT EXISTS estado_anterior varchar(30);
 ALTER TABLE public.usuarios ALTER COLUMN activo SET DEFAULT false;
+ALTER FUNCTION public.actualizar_timestamp() SET search_path = '';
 CREATE OR REPLACE FUNCTION public.es_admin() RETURNS boolean
 LANGUAGE sql STABLE SECURITY DEFINER SET search_path = '' AS $$
  SELECT EXISTS (SELECT 1 FROM public.usuarios WHERE id=auth.uid() AND rol='admin' AND activo IS TRUE);
 $$;
 REVOKE ALL ON FUNCTION public.es_admin() FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION public.es_admin() TO anon, authenticated;
+CREATE OR REPLACE FUNCTION public.es_lector() RETURNS boolean
+LANGUAGE sql STABLE SECURITY DEFINER SET search_path = '' AS $$
+ SELECT EXISTS (SELECT 1 FROM public.usuarios WHERE id=auth.uid() AND rol IN ('admin','empleado') AND activo IS TRUE);
+$$;
+REVOKE ALL ON FUNCTION public.es_lector() FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.es_lector() TO anon, authenticated;
 -- Replace policies on these three application-owned tables only.
 DO $$ DECLARE p record; BEGIN
  FOR p IN SELECT schemaname,tablename,policyname FROM pg_policies WHERE schemaname='public' AND tablename IN ('pqrs','usuarios','seguimiento_pqrs') LOOP
@@ -33,12 +40,12 @@ REVOKE ALL ON public.pqrs, public.usuarios, public.seguimiento_pqrs FROM anon, a
 GRANT SELECT, INSERT, UPDATE ON public.pqrs TO authenticated;
 GRANT SELECT, UPDATE ON public.usuarios TO authenticated;
 GRANT SELECT ON public.seguimiento_pqrs TO authenticated;
-CREATE POLICY admin_read ON public.pqrs FOR SELECT TO authenticated USING ((SELECT public.es_admin()));
+CREATE POLICY internal_read ON public.pqrs FOR SELECT TO authenticated USING ((SELECT public.es_lector()));
 CREATE POLICY admin_insert ON public.pqrs FOR INSERT TO authenticated WITH CHECK ((SELECT public.es_admin()));
 CREATE POLICY admin_update ON public.pqrs FOR UPDATE TO authenticated USING ((SELECT public.es_admin())) WITH CHECK ((SELECT public.es_admin()));
 CREATE POLICY profile_read ON public.usuarios FOR SELECT TO authenticated USING (id=auth.uid() OR (SELECT public.es_admin()));
 CREATE POLICY profile_admin_update ON public.usuarios FOR UPDATE TO authenticated USING ((SELECT public.es_admin()) AND id<>auth.uid()) WITH CHECK ((SELECT public.es_admin()) AND id<>auth.uid());
-CREATE POLICY history_admin_read ON public.seguimiento_pqrs FOR SELECT TO authenticated USING ((SELECT public.es_admin()));
+CREATE POLICY history_internal_read ON public.seguimiento_pqrs FOR SELECT TO authenticated USING ((SELECT public.es_lector()));
 -- Disable the legacy direct public RPC; never leave a route around server abuse controls.
 DO $$ BEGIN
  IF to_regprocedure('public.consultar_pqrs_publico(text,text)') IS NOT NULL THEN
@@ -123,10 +130,22 @@ DROP POLICY IF EXISTS "Leer evidencias publico" ON storage.objects;
 DROP POLICY IF EXISTS "Eliminar evidencias autenticado" ON storage.objects;
 DROP POLICY IF EXISTS evidence_admin ON storage.objects;
 CREATE POLICY evidence_admin ON storage.objects FOR ALL TO authenticated USING (bucket_id='evidencias-pqrs' AND (SELECT public.es_admin())) WITH CHECK (bucket_id='evidencias-pqrs' AND (SELECT public.es_admin()));
--- Restrictive fence also overrides unrelated permissive policies for this bucket.
+DROP POLICY IF EXISTS evidence_read ON storage.objects;
+CREATE POLICY evidence_read ON storage.objects FOR SELECT TO authenticated USING (bucket_id='evidencias-pqrs' AND (SELECT public.es_lector()));
+-- Fence reads separately from mutations, including pre-existing permissive policies.
 DROP POLICY IF EXISTS evidence_fence ON storage.objects;
-CREATE POLICY evidence_fence ON storage.objects AS RESTRICTIVE FOR ALL TO public
+DROP POLICY IF EXISTS evidence_read_fence ON storage.objects;
+CREATE POLICY evidence_read_fence ON storage.objects AS RESTRICTIVE FOR SELECT TO public
+ USING (bucket_id<>'evidencias-pqrs' OR (auth.role()='authenticated' AND (SELECT public.es_lector())));
+DROP POLICY IF EXISTS evidence_insert_fence ON storage.objects;
+CREATE POLICY evidence_insert_fence ON storage.objects AS RESTRICTIVE FOR INSERT TO public
+ WITH CHECK (bucket_id<>'evidencias-pqrs' OR (auth.role()='authenticated' AND (SELECT public.es_admin())));
+DROP POLICY IF EXISTS evidence_update_fence ON storage.objects;
+CREATE POLICY evidence_update_fence ON storage.objects AS RESTRICTIVE FOR UPDATE TO public
  USING (bucket_id<>'evidencias-pqrs' OR (auth.role()='authenticated' AND (SELECT public.es_admin())))
  WITH CHECK (bucket_id<>'evidencias-pqrs' OR (auth.role()='authenticated' AND (SELECT public.es_admin())));
+DROP POLICY IF EXISTS evidence_delete_fence ON storage.objects;
+CREATE POLICY evidence_delete_fence ON storage.objects AS RESTRICTIVE FOR DELETE TO public
+ USING (bucket_id<>'evidencias-pqrs' OR (auth.role()='authenticated' AND (SELECT public.es_admin())));
 CREATE INDEX IF NOT EXISTS pqrs_active_date_idx ON public.pqrs(fecha_registro DESC,id) WHERE coalesce(eliminado,false)=false;
 COMMIT;

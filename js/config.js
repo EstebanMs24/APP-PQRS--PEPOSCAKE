@@ -19,7 +19,7 @@ const CONFIG = {
   // Permisos por rol
   PERMISOS: {
     cliente: [],
-    empleado: [],
+    empleado: ['ver_todos', 'exportar'],
     admin: ['crear_pqrs', 'ver_todos', 'editar_todos', 'eliminar', 'exportar', 'configurar_usuarios']
   },
 

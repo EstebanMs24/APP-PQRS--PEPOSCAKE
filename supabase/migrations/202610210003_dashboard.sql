@@ -1,7 +1,7 @@
 BEGIN;
 CREATE OR REPLACE FUNCTION public.resumen_pqrs() RETURNS jsonb LANGUAGE plpgsql STABLE SECURITY INVOKER SET search_path='' AS $$
 DECLARE result jsonb; BEGIN
- IF NOT public.es_admin() THEN RAISE EXCEPTION 'Administrator required' USING ERRCODE='42501'; END IF;
+ IF NOT public.es_lector() THEN RAISE EXCEPTION 'Active internal account required' USING ERRCODE='42501'; END IF;
  WITH cases AS (
  SELECT *,fecha_registro + CASE tipo_solicitud WHEN 'Peticion' THEN interval '72 hours' WHEN 'Queja' THEN interval '48 hours' WHEN 'Reclamo' THEN interval '48 hours' ELSE interval '120 hours' END AS limite,
  CASE tipo_solicitud WHEN 'Peticion' THEN interval '18 hours' WHEN 'Queja' THEN interval '12 hours' WHEN 'Reclamo' THEN interval '12 hours' ELSE interval '30 hours' END AS aviso

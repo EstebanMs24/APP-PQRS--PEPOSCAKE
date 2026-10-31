@@ -3,20 +3,28 @@ const PROTECTED_PAGES = ['dashboard', 'nuevo-pqrs', 'lista-pqrs', 'detalle-pqrs'
 window.authReady = new Promise(resolve => { window.resolveAuth = resolve; });
 async function usuarioActivo(db, id) {
   const { data, error } = await db.from('usuarios').select('id,nombre,correo,rol,activo').eq('id', id).single();
-  if (error || !data || data.activo !== true || data.rol !== 'admin') return false;
+  if (error || !data || data.activo !== true || !['admin', 'empleado'].includes(data.rol)) return false;
   window.currentUser = data; window.currentUserRol = data.rol;
   return true;
 }
 function getCurrentUser() { return window.currentUser || null; }
 async function requireAdmin(db) {
   const { data, error } = await db.auth.getUser();
-  if (error || !data?.user || !await usuarioActivo(db, data.user.id)) throw new Error('Acceso administrativo no autorizado.');
+  if (error || !data?.user || !await usuarioActivo(db, data.user.id) || window.currentUser.rol !== 'admin') throw new Error('Acceso administrativo no autorizado.');
   return window.currentUser;
 }
 async function withAdmin(callback) {
   const allowed = await window.authReady;
   if (!allowed) return;
   return withSupabase(async db => { await requireAdmin(db); return callback(db); });
+}
+async function withReader(callback) {
+  if (!await window.authReady) return;
+  return withSupabase(async db => {
+    const { data, error } = await db.auth.getUser();
+    if (error || !data?.user || !await usuarioActivo(db, data.user.id)) throw new Error('Se requiere una cuenta activa.');
+    return callback(db);
+  });
 }
 document.addEventListener('DOMContentLoaded', async () => {
   document.getElementById('loginForm')?.addEventListener('submit', handleLogin);
@@ -32,10 +40,13 @@ document.addEventListener('DOMContentLoaded', async () => {
       window.location.replace('index.html?acceso=1'); window.resolveAuth(false); return;
     }
     if (page === 'index' && allowed) { window.location.replace('dashboard.html'); return; }
+    if (allowed && ['nuevo-pqrs', 'usuarios'].includes(page) && window.currentUser.rol !== 'admin') {
+      window.resolveAuth(false); window.location.replace('dashboard.html'); return;
+    }
     if (allowed) {
       const name = document.getElementById('userName'), role = document.getElementById('userRole');
       if (name) name.textContent = window.currentUser.nombre;
-      if (role) role.textContent = 'Administrador';
+      if (role) role.textContent = getLabelRol(window.currentUser.rol);
       updateRoleBasedElements();
     }
     document.documentElement.classList.remove('auth-pending');
@@ -44,7 +55,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     db.auth.onAuthStateChange(event => {
       if (event === 'SIGNED_OUT' && PROTECTED_PAGES.includes(page)) window.location.replace('index.html');
     });
-    if (page === 'index' && new URLSearchParams(location.search).has('acceso')) mostrarError(document.getElementById('loginError'), 'Se requiere una cuenta administrativa activa.');
+    if (page === 'index' && new URLSearchParams(location.search).has('acceso')) mostrarError(document.getElementById('loginError'), 'Se requiere una cuenta interna activa.');
   } catch {
     window.resolveAuth(false);
     document.documentElement.classList.remove('auth-pending');
@@ -62,7 +73,7 @@ async function handleLogin(e) {
     const { data, error } = await db.auth.signInWithPassword({ email: document.getElementById('email').value.trim(), password: document.getElementById('password').value });
     if (error) throw new Error('Correo o contraseña incorrectos, o servicio no disponible.');
     if (!await usuarioActivo(db, data.user.id)) {
-      await db.auth.signOut(); throw new Error('Se requiere una cuenta administrativa activa. Contacta al responsable del sistema.');
+      await db.auth.signOut(); throw new Error('Se requiere una cuenta interna activa. Contacta al responsable del sistema.');
     }
     window.location.assign('dashboard.html');
   } catch (error) { mostrarError(errorEl, error.message); }
@@ -80,7 +91,7 @@ async function handleLogout() {
 function getLabelRol(rol) {
   const map = {
     'cliente': 'Cliente',
-    'empleado': 'Empleado',
+    'empleado': 'Consulta (solo lectura)',
     'admin': 'Administrador'
   };
   return map[rol] || 'Usuario';

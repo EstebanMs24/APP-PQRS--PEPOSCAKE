@@ -1,16 +1,31 @@
-# Validación de staging antes de producción
+# Validación — acceso interno, 31 de octubre de 2026
 
-Usar un proyecto separado con datos ficticios y dos cuentas: administrador activo y empleado. No probar escritura destructiva contra clientes reales. Registrar fecha, versión y resultado de cada paso. Las credenciales no forman parte del informe.
+## Pruebas locales completadas
 
-1. Ejecutar preflight; comparar tablas/columnas, roles, funciones, políticas y objetos del bucket con las migraciones. Revisar funciones y vistas adicionales y restricciones/grants heredados. Verificar respaldo y restauración.
-2. Aplicar 001. Confirmar que el administrador legítimo inicia sesión, el empleado/inactivo/sin perfil no entra, y no puede asignarse rol editando peticiones. En una sesión anónima, `select('*')` sobre pqrs/perfiles/seguimiento debe denegarse. Con JWT de empleado, las escrituras deben denegarse o afectar cero filas, sin alterar datos.
-3. Crear un caso, editar solo un campo, recargar y comprobar que el resto se conserva. Repetir con envío lento/doble clic, desconexión, sesión vencida y edición simultánea desde dos navegadores. Cambiar estado con comentario y comprobar ambos en la misma transacción. Reabrir un resuelto y comprobar que fecha_resolucion vuelve a null.
-4. Subir cinco imágenes permitidas. Rechazar SVG/HTML, seis archivos y tamaños mayores de 5 MB. Verificar una referencia histórica sin mover el archivo. Abrir/descargar como admin; abrir la URL pública anterior y solicitar un enlace firmado como anónimo/empleado debe denegarse. El enlace temporal deja de servir después de caducar; el clic administrativo obtiene uno nuevo.
-5. Archivar y restaurar con confirmación; comprobar historial y ausencia de borrado físico. Probar cancelación por teclado. Confirmar que historial no admite UPDATE/DELETE desde el navegador, incluso como admin.
-6. Aplicar 002 y configurar Turnstile + secretos en servidor. Probar número, documento con separadores y teléfono con prefijo. Para documento/teléfono exigir caso+correo. Entradas incorrectas no deben revelar pertenencia del contacto. Revisar Network: exactamente los seis campos autorizados, sin datos personales.
-7. Invocar directamente la RPC antigua/nueva con anon y JWT de empleado: ambas rutas de consulta deben estar denegadas. Invalidar CAPTCHA, cambiar hostname/acción, repetir token o esperar su caducidad: no debe consultarse el caso. Intento 11 con CAPTCHA válido por IP/caso devuelve 429 (también entre instancias del servidor). Simular caída del verificador/DB: 503 sin detalles ni resultados anteriores.
-8. Aplicar 003. Comparar indicadores con COUNT/GROUP BY de staging y con más de 1.000 registros. Verificar SLA en bordes, casos cerrados y archivados. Comparar filtros (incluida etiqueta/prioridad/cédula), fechas de Bogotá, páginas y Excel. Descargar PDF/Excel reales, abrirlos y comprobar texto largo, totales, filas, formato y filtros. Las pruebas automáticas de navegador simulan estas bibliotecas.
-9. Probar desktop, 768px, 390px y 320px, teclado, foco, menús, modales, tema oscuro y reducción de movimiento. Revisar consola y red con CDN/SDK disponibles y bloqueados. Las capturas automáticas no acreditan por sí solas accesibilidad completa.
-10. Validar Preview de Vercel y, si se usa, Netlify: CSP permite el CAPTCHA, cabecera/contexto IP real llega al servidor, rutas API responden, caché no guarda resultados, `.env`, SQL, tests y node_modules no están disponibles públicamente. Probar el dominio definitivo con PUBLIC_ORIGIN/hostname coherentes.
+- Sintaxis y enlaces internos; siete pruebas unitarias de acceso, endpoints retirados, filtros, fechas y evidencias.
+- PostgreSQL PGlite: creación/edición administrativa, historial transaccional, versiones obsoletas, archivo/restauración, secuencia superior a 99999 y resumen superior a 1000 registros.
+- Lector: lee casos, historial, evidencias y resumen. Se rechazan creación, modificación, borrado, cambios de rol y RPC de actualización. Anónimo sin acceso.
+- Playwright: login/logout, formularios, edición, estados, archivo/restauración, filtros, exportaciones, lectores sin controles de escritura ni acceso a páginas administrativas; seis pantallas móviles.
+- Snapshot privado de datos y metadatos de la aplicación restaurado en PostgreSQL local; migraciones aplicadas sin alterar valores existentes.
+- Ocho evidencias descargadas con manifiesto SHA-256. No es un respaldo completo de Auth ni del proyecto.
 
-No autorizar producción con pruebas críticas fallidas. La migración de bucket y el cliente de enlaces firmados deben activarse coordinadamente en una ventana de mantenimiento; cambiar solo uno puede interrumpir temporalmente las evidencias.
+El navegador usa SDK/exportadores simulados; PostgreSQL se prueba por separado. Las cuentas reales de los tres lectores se comprobarán cuando estén creadas.
+
+## Comprobación con cuentas reales
+
+## Servicios reales comprobados
+
+- Supabase: aplicadas las migraciones `internal_roles_and_private_evidence` e `internal_dashboard_summary`.
+- Cinco PQRS, un perfil administrador y ocho evidencias conservados. Bucket privado; lectura anónima y RPC pública antigua denegadas.
+- Prueba transaccional en Supabase: administrador crea, resuelve y archiva con historial; lector lee casos/evidencias/resumen y no puede insertar, actualizar, borrar casos, cambiar roles o usar RPC de actualización. Se revirtieron todos los datos de prueba. La secuencia puede dejar huecos.
+- Vista previa Netlify: SDK real carga, páginas protegidas redirigen al login, endpoints retirados devuelven 410 y archivos privados no se publican. API REST anónima deniega acceso a las tres tablas y a la RPC antigua.
+
+## Comprobación con cuentas reales
+
+1. Administrador: ingresar, crear un caso, adjuntar imagen, editar y registrar un cambio de estado con comentario. Recargar para comprobar persistencia.
+2. Lector: abrir ese caso y comprobar datos, historial e imagen. No deben aparecer Nuevo, Editar, Archivar ni Actualizar estado.
+3. Lector: consultar reportes y abrir un PDF/Excel exportado.
+4. Administrador: archivar/restaurar. Lector: consultar archivados sin poder restaurarlos.
+5. Cerrar sesión y abrir un detalle directamente: debe pedir login. La antigua consulta pública debe llevar al login.
+
+Archivar los casos de prueba; conservar el historial existente.

@@ -3,5 +3,7 @@ node_modules/
 .env.*
 !.env.example
 .vercel/
+.netlify/
+debug.log
 artifacts/
 dist/

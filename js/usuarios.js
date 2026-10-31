@@ -54,7 +54,7 @@ async function cargarUsuarios(db) {
       : '<span class="badge badge-Pendiente">Pendiente</span>';
 
     // Selector de rol (deshabilitado en la propia cuenta para evitar auto-degradarse)
-    const roles = ['cliente', 'empleado', 'admin'];
+    const roles = ['empleado', 'admin'];
     const opciones = roles.map(r =>
       `<option value="${r}" ${u.rol === r ? 'selected' : ''}>${getLabelRol(r)}</option>`
     ).join('');

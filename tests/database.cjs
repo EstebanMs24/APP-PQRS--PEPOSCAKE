@@ -41,7 +41,7 @@ const assert = require('node:assert/strict');
  await denied("INSERT INTO public.pqrs(nombre_cliente) VALUES ('no')");
  await asUser('authenticated',missing); assert.equal((await db.query('SELECT public.es_admin() ok')).rows[0].ok,false);
  await asUser('authenticated',employee);
- assert.equal((await db.query('SELECT * FROM public.pqrs')).rows.length,0);
+ assert.equal((await db.query('SELECT * FROM public.pqrs')).rows.length,1);
  assert.equal((await db.query("UPDATE public.usuarios SET rol='admin' RETURNING id")).rows.length,0);
  await denied("INSERT INTO public.pqrs(nombre_cliente,motivo,descripcion,tipo_solicitud,area_responsable) VALUES('Test','Test','Long description','Queja','Envios')");
  await asUser('authenticated',admin);
@@ -63,7 +63,13 @@ const assert = require('node:assert/strict');
  assert.equal((await db.query('SELECT eliminado_por FROM public.pqrs')).rows[0].eliminado_por,admin);
  await db.exec("UPDATE public.pqrs SET eliminado=false WHERE motivo='Test'");
  await db.exec("INSERT INTO storage.objects(bucket_id,name) VALUES ('evidencias-pqrs','test.png')");
- await asUser('authenticated',employee); assert.equal((await db.query('SELECT * FROM storage.objects')).rows.length,0);
+ await asUser('authenticated',employee); assert.equal((await db.query('SELECT * FROM storage.objects')).rows.length,1);
+ await denied("INSERT INTO storage.objects(bucket_id,name) VALUES ('evidencias-pqrs','forbidden.png')");
+ assert.equal((await db.query("UPDATE storage.objects SET name='forbidden.png' RETURNING id")).rows.length,0);
+ assert.equal((await db.query('DELETE FROM storage.objects RETURNING id')).rows.length,0);
+ await denied('DELETE FROM public.pqrs');
+ await denied("INSERT INTO public.seguimiento_pqrs(comentario) VALUES ('forbidden')");
+ assert.ok((await db.query('SELECT * FROM public.seguimiento_pqrs')).rows.length>0);
  assert.equal((await db.query("UPDATE public.pqrs SET estado='Rechazado' RETURNING id")).rows.length,0);
  await denied("SELECT public.actualizar_estado_pqrs('00000000-0000-4000-8000-000000000010','Pendiente','bypass','',now())");
  await asUser('anon'); assert.equal((await db.query('SELECT * FROM storage.objects')).rows.length,0);
@@ -75,25 +81,13 @@ const assert = require('node:assert/strict');
  await db.exec('RESET ROLE');
  await db.exec(fs.readFileSync('supabase/migrations/202610210003_dashboard.sql','utf8'));
  await asUser('authenticated',admin); assert.equal((await db.query('SELECT public.resumen_pqrs() AS s')).rows[0].s.total,2);
- await asUser('authenticated',employee); await denied('SELECT public.resumen_pqrs()');
+ await asUser('authenticated',employee); assert.equal((await db.query('SELECT public.resumen_pqrs() AS s')).rows[0].s.total,2);
  await db.exec('RESET ROLE');
- if(fs.existsSync('supabase/migrations/202610210002_public_lookup.sql')) {
-  await db.exec(fs.readFileSync('supabase/migrations/202610210002_public_lookup.sql','utf8'));
-  await asUser('anon'); await denied("SELECT * FROM public.consultar_pqrs_servidor('numero','x','x','x')");
-  await asUser('service_role');
-  for(const [criterion,value] of [['numero',first],['cedula','12.345.678'],['telefono','300 123 4567']]) {
-   const result=await db.query('SELECT * FROM public.consultar_pqrs_servidor($1,$2,$3,$4)',[criterion,value,first,'client@example.test']);
-   assert.equal(result.rows.length,1); assert.equal('nombre_cliente' in result.rows[0],false); assert.equal('solucion' in result.rows[0],false);
-  }
-  assert.equal((await db.query('SELECT * FROM public.consultar_pqrs_servidor($1,$2,$3,$4)',['cedula','12345678',first,'wrong@example.test'])).rows.length,0);
-  for(let i=0;i<10;i++) assert.equal((await db.query("SELECT public.consumir_consulta(repeat('a',64),repeat('b',64)) ok")).rows[0].ok,true);
-  assert.equal((await db.query("SELECT public.consumir_consulta(repeat('a',64),repeat('b',64)) ok")).rows[0].ok,false);
- }
 
  await asUser('authenticated',admin);
  await db.exec("INSERT INTO public.pqrs(nombre_cliente,motivo,descripcion,tipo_solicitud,area_responsable) SELECT 'Test','Bulk','Long description','Queja','Envios' FROM generate_series(1,1005)");
  assert.equal((await db.query('SELECT public.resumen_pqrs() AS s')).rows[0].s.total,1007);
  await db.exec('RESET ROLE');await db.exec(`UPDATE public.usuarios SET activo=false WHERE id='${admin}'`);
  await asUser('authenticated',admin);assert.equal((await db.query('SELECT * FROM public.pqrs')).rows.length,0);
- await db.close(); console.log('PASS: fresh schema, repeatable migration, role denial, admin writes, atomic history, concurrency version, archive, private storage, sequence >99999; public lookup/rate limit when installed.');
+ await db.close(); console.log('PASS: fresh schema, repeatable migration, role denial, admin writes, atomic history, concurrency version, archive, private storage, sequence >99999; readers see all data but cannot mutate records, history, profiles or evidence.');
 })().catch(e=>{console.error(e.message,e.code);process.exit(1)});
