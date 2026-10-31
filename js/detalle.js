@@ -56,6 +56,12 @@ async function cargarDetalle(db, id) {
   const clone = template.content.cloneNode(true);
   mainEl.innerHTML = '';
   mainEl.appendChild(clone);
+  // Apply permissions before waiting for private evidence URLs to load.
+  updateRoleBasedElements();
+  if (data.eliminado || !tieneRol('admin')) {
+    document.getElementById('formActualizarEstado')?.setAttribute('hidden', '');
+    document.getElementById('btnEliminar')?.setAttribute('hidden', '');
+  }
 
   // Poblar datos
   setDetalle('d-numero_caso', data.numero_caso);
