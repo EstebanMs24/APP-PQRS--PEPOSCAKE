@@ -170,78 +170,40 @@ const Utils = {
   // Paleta semántica para columnas (distinta por categoría)
   CHART_PALETTE: ['#7DCFB6', '#F0C75A', '#E89098', '#6FA8DC', '#9B8BD4', '#5AB89A'],
 
-  renderBarChart(containerId, data, total, labelMap) {
+  renderBarChart(containerId, data, total, labelMap = {}) {
     const container = document.getElementById(containerId);
     if (!container) return;
-
-    const sorted = Object.entries(data).sort((a, b) => b[1] - a[1]);
-    if (sorted.length === 0) {
-      container.innerHTML = '<p class="text-muted text-center">Sin datos</p>';
+    const keys = [...new Set([...Object.keys(labelMap), ...Object.keys(data || {})])];
+    if (!(total > 0)) {
+      container.innerHTML = '<div class="chart-empty"><i class="bi bi-bar-chart" aria-hidden="true"></i><strong>Aún no hay datos para mostrar</strong><span>Las solicitudes aparecerán aquí cuando estén disponibles.</span></div>';
       return;
     }
-    const maxVal = sorted[0][1] || 1;
-    const palette = Utils.CHART_PALETTE;
-
-    container.innerHTML = `<div class="vbar-chart">` + sorted.map(([key, count], i) => {
-      const h = maxVal > 0 ? Math.max(Math.round((count / maxVal) * 100), 5) : 5;
-      const label = (labelMap && labelMap[key]) ? labelMap[key] : key;
-      const color = palette[i % palette.length];
-      return `
-        <div class="vbar-col">
-          <span class="vbar-value">${count}</span>
-          <div class="vbar-track"><div class="vbar" style="height:${h}%; background:${color}"></div></div>
-          <span class="vbar-label" title="${this.escapeHtml(label)}">${this.escapeHtml(label)}</span>
-        </div>`;
-    }).join('') + `</div>`;
+    container.innerHTML = '<ul class="distribution-chart">' + keys.map((key, i) => {
+      const count = Math.max(0, Number(data?.[key]) || 0);
+      const percent = Math.min(100, count / total * 100);
+      const label = this.escapeHtml(labelMap[key] || key);
+      const color = ['#23765f','#b47b30','#6586aa','#a56b81'][i % 4];
+      return `<li class="distribution-row" style="--chart-color:${color}"><div class="distribution-label"><span>${label}</span><span><strong>${count}</strong><small>${percent.toLocaleString('es-CO', {maximumFractionDigits:1})}%</small></span></div><div class="distribution-track" aria-hidden="true"><span style="width:${percent}%"></span></div></li>`;
+    }).join('') + '</ul><p class="chart-footnote">Base: ' + Number(total).toLocaleString('es-CO') + (total === 1 ? ' solicitud no archivada.</p>' : ' solicitudes no archivadas.</p>');
   },
 
   renderTrendSVG(meses) {
-    const W = 600, H = 180;
-    const padL = 40, padR = 50, padT = 30, padB = 35;
-    const chartW = W - padL - padR;
-    const chartH = H - padT - padB;
-    const maxVal = Math.max(...meses.map(m => m.total), 1);
-    const n = meses.length;
-
-    const xs = meses.map((_, i) => padL + (n===1 ? 0.5 : i / (n - 1)) * chartW);
-    const ys = meses.map(m => padT + chartH - (m.total / maxVal) * chartH);
-
-    const linePoints = xs.map((x, i) => `${x},${ys[i]}`).join(' ');
-    const areaPath = `M${xs[0]},${padT + chartH} ` +
-      xs.map((x, i) => `L${x},${ys[i]}`).join(' ') +
-      ` L${xs[n - 1]},${padT + chartH} Z`;
-
-    const gridLines = [0.25, 0.5, 0.75, 1].map(frac => {
-      const y = padT + chartH - frac * chartH;
-      const label = Math.round(frac * maxVal);
-      return `<line class="trend-grid-line" x1="${padL}" y1="${y}" x2="${W - padR}" y2="${y}"/>
-              <text x="${padL - 4}" y="${y + 4}" text-anchor="end" class="trend-month-label">${label}</text>`;
+    if (!meses.length) return '<p class="chart-empty">Sin datos para el período seleccionado.</p>';
+    const W=800, H=240, left=42, right=40, top=32, bottom=38;
+    const width=W-left-right, height=H-top-bottom;
+    const values=meses.map(m=>Math.max(0, Number(m.total)||0));
+    const max=Math.max(...values,1), step=Math.max(1,Math.ceil(max/4)), upper=Math.ceil(max/step)*step;
+    const xs=meses.map((_,i)=>left+(meses.length===1?.5:i/(meses.length-1))*width);
+    const ys=values.map(v=>top+height-v/upper*height);
+    const points=xs.map((x,i)=>`${x},${ys[i]}`).join(' ');
+    const grid=Array.from({length:upper/step+1},(_,i)=>{
+      const value=i*step,y=top+height-value/upper*height;
+      return `<line class="trend-grid-line" x1="${left}" y1="${y}" x2="${W-right}" y2="${y}"/><text class="trend-month-label" x="${left-12}" y="${y+4}" text-anchor="end">${value}</text>`;
     }).join('');
-
-    const dots = meses.map((m, i) => `
-      <circle class="trend-dot" cx="${xs[i]}" cy="${ys[i]}" r="5"/>
-      <text class="trend-dot-label" x="${xs[i]}" y="${ys[i] - 10}" text-anchor="middle">${m.total > 0 ? m.total : ''}</text>
-    `).join('');
-
-    const monthLabels = meses.map((m, i) => `
-      <text class="trend-month-label" x="${xs[i]}" y="${H - 4}" text-anchor="middle">${m.label}</text>
-    `).join('');
-
-    return `
-      <svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" style="width:100%; max-width:${W}px;">
-        <defs>
-          <linearGradient id="trendGrad" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stop-color="#00BCD4" stop-opacity="0.35"/>
-            <stop offset="100%" stop-color="#00BCD4" stop-opacity="0"/>
-          </linearGradient>
-        </defs>
-        ${gridLines}
-        <path class="trend-area" d="${areaPath}"/>
-        <polyline class="trend-line" points="${linePoints}"/>
-        ${dots}
-        ${monthLabels}
-      </svg>
-    `;
+    const labels=meses.map((m,i)=>`<circle class="trend-dot" cx="${xs[i]}" cy="${ys[i]}" r="5"><title>${this.escapeHtml(m.label)}: ${values[i]} solicitudes</title></circle><text class="trend-dot-label" x="${xs[i]}" y="${ys[i]-13}" text-anchor="middle">${values[i]}</text><text class="trend-month-label" x="${xs[i]}" y="${H-9}" text-anchor="middle">${this.escapeHtml(m.label)}</text>`).join('');
+    const mobile='<ol class="trend-mobile">'+meses.map((m,i)=>`<li><span>${this.escapeHtml(m.label)}</span><span class="trend-mobile-track" aria-hidden="true"><span style="width:${values[i]/upper*100}%"></span></span><strong>${values[i]}</strong></li>`).join('')+'</ol>';
+    const description=this.escapeHtml(meses.map((m,i)=>`${m.label}: ${values[i]}`).join('; '));
+    return `<div class="chart-scroll" tabindex="0" role="region" aria-label="Tendencia mensual. En pantallas pequeñas puedes desplazar el gráfico horizontalmente."><svg class="analytics-trend" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Solicitudes por mes: ${description}"><defs><linearGradient id="trendGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#23765f" stop-opacity="0.2"/><stop offset="100%" stop-color="#23765f" stop-opacity="0.02"/></linearGradient></defs>${grid}<path class="trend-area" d="M${xs[0]},${top+height} ${xs.map((x,i)=>`L${x},${ys[i]}`).join(' ')} L${xs[xs.length-1]},${top+height} Z"/><polyline class="trend-line" points="${points}"/>${labels}</svg></div>${mobile}<details class="chart-data"><summary>Ver cifras por mes</summary><dl>${meses.map((m,i)=>`<div><dt>${this.escapeHtml(m.label)}</dt><dd>${values[i]}</dd></div>`).join('')}</dl></details>`;
   },
 
   // Utilidades

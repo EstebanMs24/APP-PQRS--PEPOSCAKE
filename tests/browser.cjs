@@ -91,6 +91,16 @@ function mock({role,fixture}) {
  assert.equal(await mobile.page.evaluate(()=>{const header=document.querySelector('.topbar').getBoundingClientRect();return [...document.querySelectorAll('.topbar button,.topbar a')].every(el=>{const b=el.getBoundingClientRect();return b.top>=header.top&&b.bottom<=header.bottom;});}),true,'Header actions must stay inside header');
  await mobile.page.click('#menuToggle');assert.equal(await mobile.page.getAttribute('#menuToggle','aria-expanded'),'true');await mobile.page.keyboard.press('Escape');assert.equal(await mobile.page.getAttribute('#menuToggle','aria-expanded'),'false');
  await mobile.page.setViewportSize({width:320,height:740});assert.equal(await mobile.page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
+ for(const theme of ['light','dark'])for(const width of [320,390,768,1024,1440]){
+  await mobile.page.setViewportSize({width,height:1000});
+  await mobile.page.evaluate(t=>localStorage.setItem('pqrs_tema',t),theme);
+  for(const file of ['dashboard','reportes']){
+   await mobile.page.goto(base+'/'+file+'.html');
+   await mobile.page.waitForFunction(id=>document.getElementById(id)?.textContent!=='--',file==='dashboard'?'statTotal':'rTotal');
+   assert.equal(await mobile.page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true,`${file} overflow at ${width}px (${theme})`);
+   await mobile.page.screenshot({path:`artifacts/design-${file}-${width}-${theme}.png`,fullPage:true});
+  }
+ }
  assert.deepEqual(errors,[]);
  await browser.close();server.kill();console.log('PASS: browser login/logout, role redirects, create/edit/reload/state/archive/restore, filters, export wiring, reader access and denied write controls, retired public lookup, six mobile screens and JS errors. Backend and export libraries mocked; SQL tested separately.');
 })().catch(error=>{console.error(error);server.kill();process.exit(1)});

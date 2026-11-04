@@ -106,28 +106,9 @@ async function generarReporte(db, desde, hasta) {
   });
 
   const mesSorted = Object.entries(porMes).sort((a, b) => a[0].localeCompare(b[0]));
-  const maxMes = mesSorted.reduce((max, [, v]) => Math.max(max, v.total), 1);
-
-  // Gráfico de mes
-  const chartMes = document.getElementById('chartReporteMes');
-  if (chartMes) {
-    chartMes.innerHTML = mesSorted.map(([mes, v]) => {
-      const pct = Math.round((v.total / maxMes) * 100);
-      const [year, month] = mes.split('-');
-      const label = new Date(year, month - 1).toLocaleDateString('es-CO', { month: 'short', year: 'numeric' });
-      return `
-        <div class="bar-item">
-          <span class="bar-label">${label}</span>
-          <div class="bar-track">
-            <div class="bar-fill" style="width:${pct}%">
-              <span class="bar-value">${v.total}</span>
-            </div>
-          </div>
-          <span class="bar-count">${v.total}</span>
-        </div>
-      `;
-    }).join('') || '<p class="text-muted text-center">Sin datos</p>';
-  }
+  const monthlyCounts=Object.fromEntries(mesSorted.map(([key,value])=>[key,value.total]));
+  const monthlyLabels=Object.fromEntries(mesSorted.map(([key])=>[key,new Date(key+'-15T12:00:00').toLocaleDateString('es-CO',{month:'short',year:'numeric'})]));
+  Utils.renderBarChart('chartReporteMes',monthlyCounts,total,monthlyLabels);
 
   // Tabla mensual
   const tbody = document.getElementById('tbodyMeses');

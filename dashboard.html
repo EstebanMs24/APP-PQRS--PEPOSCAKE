@@ -12,7 +12,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet">
 </head>
-<body><a class="skip-link" href="#contenido">Saltar al contenido</a>
+<body class="analytics-page dashboard-page"><a class="skip-link" href="#contenido">Saltar al contenido</a>
   <!-- SIDEBAR -->
   <div class="sidebar" id="sidebar">
     <div class="sidebar-header">
@@ -60,7 +60,7 @@
     <!-- TOPBAR -->
     <header class="topbar">
       <button class="menu-toggle" id="menuToggle" aria-label="Abrir navegación" aria-controls="sidebar" aria-expanded="false"><i class="bi bi-list"></i></button>
-      <h1 class="page-title">Dashboard</h1>
+      <h1 class="page-title">Panel de atención</h1>
       <div class="topbar-actions">
         <a href="nuevo-pqrs.html" data-rol-minimo="admin" class="btn btn-primary btn-sm">
           <i class="bi bi-plus-circle-fill"></i> Nuevo PQRS
@@ -69,14 +69,14 @@
     </header>
 
     <!-- PAGE BODY -->
-    <main class="page-body" id="contenido"><div class="page-intro"><h2>Resumen de atención</h2><p>Monitorea solicitudes activas, plazos y resultados de tu equipo.</p></div>
+    <main class="page-body" id="contenido"><section class="overview-hero" aria-labelledby="overviewTitle"><div><span class="hero-kicker">PEPO’S CAKE · ATENCIÓN AL CLIENTE</span><h2 id="overviewTitle">Cada detalle cuenta.</h2><p>Una vista clara de tus solicitudes, para cuidar cada experiencia.</p><a href="lista-pqrs.html" class="hero-link">Consultar solicitudes <i class="bi bi-arrow-right" aria-hidden="true"></i></a></div><div class="hero-brand" aria-hidden="true"><img src="img/mascota-pepo.png" alt="" /><span>Hecho con cariño.<br>Atendido con cuidado.</span></div></section>
       <!-- TARJETAS DE ESTADÍSTICAS -->
-      <section class="stats-grid stats-grid-6">
+      <section class="stats-grid overview-stats">
         <div class="stat-card stat-total">
           <div class="stat-icon"><i class="bi bi-inbox-fill"></i></div>
           <div class="stat-info">
             <span class="stat-number" id="statTotal">--</span>
-            <span class="stat-label">Total PQRS</span>
+            <span class="stat-label">Casos no archivados</span>
           </div>
         </div>
         <div class="stat-card stat-pendiente">
@@ -100,6 +100,8 @@
             <span class="stat-label">Resueltos</span>
           </div>
         </div>
+      </section>
+      <section class="stats-grid overview-alerts" aria-label="Plazos y archivo">
         <div class="stat-card stat-eliminado">
           <div class="stat-icon"><i class="bi bi-trash3-fill"></i></div>
           <div class="stat-info">
@@ -118,7 +120,7 @@
           <div class="stat-icon"><i class="bi bi-alarm-fill"></i></div>
           <div class="stat-info">
             <span class="stat-number" id="statSlaVencido">--</span>
-            <span class="stat-label">SLA Vencido</span>
+            <span class="stat-label">Fuera de plazo</span>
           </div>
         </div>
       </section>
@@ -129,7 +131,7 @@
         <!-- Distribución por área -->
         <div class="card">
           <div class="card-header">
-            <h3>PQRS por Área</h3>
+            <div><h3>¿Dónde nos necesitan?</h3><p class="chart-caption">Distribución de solicitudes por área</p></div>
           </div>
           <div class="card-body">
             <div id="chartArea" class="bar-chart-container"></div>
@@ -139,7 +141,7 @@
         <!-- Distribución por tipo -->
         <div class="card">
           <div class="card-header">
-            <h3>PQRS por Tipo</h3>
+            <div><h3>La voz de nuestros clientes</h3><p class="chart-caption">Tipos de solicitud y su participación</p></div>
           </div>
           <div class="card-body">
             <div id="chartTipo" class="bar-chart-container"></div>
@@ -150,7 +152,7 @@
       <!-- TABLA ÚLTIMOS CASOS -->
       <div class="card mt-4">
         <div class="card-header">
-          <h3>Tendencia Mensual (últimos 6 meses)</h3>
+          <div><h3>Así va la atención</h3><p class="chart-caption">Solicitudes recibidas · últimos 6 meses · sin archivados</p></div>
         </div>
         <div class="card-body">
           <div class="trend-chart-wrapper" id="chartTendencia">
@@ -167,7 +169,7 @@
         </div>
         <div class="card-body p-0">
           <div class="table-responsive">
-            <table class="table" id="tablaCasos">
+            <table class="table table-as-cards" id="tablaCasos">
               <thead>
                 <tr>
                   <th>Nº Caso</th>

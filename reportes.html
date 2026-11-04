@@ -13,7 +13,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 </head>
-<body><a class="skip-link" href="#contenido">Saltar al contenido</a>
+<body class="analytics-page reports-page"><a class="skip-link" href="#contenido">Saltar al contenido</a>
   <!-- SIDEBAR -->
   <div class="sidebar" id="sidebar">
     <div class="sidebar-header">
@@ -63,7 +63,7 @@
       </div>
     </header>
 
-    <main class="page-body" id="contenido"><div class="page-intro"><h2>Reportes de atención</h2><p>Consulta resultados por período y exporta la información autorizada.</p></div>
+    <main class="page-body" id="contenido"><div class="page-intro report-intro"><span class="section-kicker">RESULTADOS DEL EQUIPO</span><h2>Los datos cuentan una historia.</h2><p>Explora la atención por período, identifica patrones y comparte los resultados.</p></div>
       <!-- FILTRO DE PERÍODO -->
       <div class="card filters-card mb-4">
         <div class="card-body">
@@ -126,13 +126,13 @@
       <!-- GRÁFICAS -->
       <div class="charts-grid mt-4">
         <div class="card">
-          <div class="card-header"><h3>Por Área</h3></div>
+          <div class="card-header"><div><h3>Solicitudes por área</h3><p class="chart-caption">Participación en el período seleccionado</p></div></div>
           <div class="card-body">
             <div id="chartReporteArea" class="bar-chart-container"></div>
           </div>
         </div>
         <div class="card">
-          <div class="card-header"><h3>Por Tipo</h3></div>
+          <div class="card-header"><div><h3>Tipos de solicitud</h3><p class="chart-caption">Cantidad y porcentaje del total</p></div></div>
           <div class="card-body">
             <div id="chartReporteTipo" class="bar-chart-container"></div>
           </div>

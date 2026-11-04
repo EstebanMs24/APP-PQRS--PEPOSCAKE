@@ -61,13 +61,13 @@ async function cargarCasosRecientes(db) {
 
   tbody.innerHTML = data.map(row => `
     <tr>
-      <td><strong>${Utils.escapeHtml(row.numero_caso)}</strong></td>
-      <td>${Utils.escapeHtml(row.nombre_cliente)}</td>
-      <td>${Utils.badgeTipo(row.tipo_solicitud)}</td>
-      <td>${Utils.labelArea(row.area_responsable)}</td>
-      <td>${Utils.badgeEstado(row.estado)}</td>
-      <td>${Utils.formatFecha(row.fecha_registro)}</td>
-      <td>
+      <td data-label="N.º caso"><strong>${Utils.escapeHtml(row.numero_caso)}</strong></td>
+      <td data-label="Cliente">${Utils.escapeHtml(row.nombre_cliente)}</td>
+      <td data-label="Tipo">${Utils.badgeTipo(row.tipo_solicitud)}</td>
+      <td data-label="Área">${Utils.labelArea(row.area_responsable)}</td>
+      <td data-label="Estado">${Utils.badgeEstado(row.estado)}</td>
+      <td data-label="Fecha">${Utils.formatFecha(row.fecha_registro)}</td>
+      <td data-label="Acciones">
         <a href="detalle-pqrs.html?id=${row.id}" class="btn btn-outline btn-sm">Ver</a>
       </td>
     </tr>
@@ -83,7 +83,7 @@ async function cargarTendencia(db) {
   const container = document.getElementById('chartTendencia');
   if (!container) return;
 
-  const hoy = new Date();
+  const hoy = new Date(Utils.fechaBogota(new Date().toISOString()) + 'T12:00:00');
   const meses = [];
   for (let i = 5; i >= 0; i--) {
     const d = new Date(hoy.getFullYear(), hoy.getMonth() - i, 1);
